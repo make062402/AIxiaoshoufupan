@@ -151,10 +151,79 @@ const SAMPLES = {
   B: {
     file: 'frontend/src/samples/transcriptB.ts',
     exportName: 'transcriptB',
-    title: 'T14 样本 B —— 打得好的那份（尚未创建）',
-    todo: true,
-    // T14 做完后照 A 的样子把 claim / range / anchors / paramChecks 填上。
-    // 对照点：销售占比压到 0.6 以下、开放式提问过半、异议当场接住、结尾锁定下一步。
+    title: 'T14 样本 B —— 打得好的那份',
+    claim: {
+      segmentCount: 102,
+      salesSegments: 56,
+      customerSegments: 46,
+      salesDuration: 857.5,
+      customerDuration: 993.1,
+      lastEnd: 1898,
+      salesTalkRatio: 0.4634,
+      interruptCount: 2,
+      icebreakDuration: 66.5,
+      customerFirstSpeakAt: 85.6,
+      salesQuestionCount: 14,
+      customerQuestionMarks: 7,
+      sellingPointHitCount: 6,
+      paramErrorCount: 0,
+      expectedTotalScore: 3,
+    },
+    range: {
+      lastEnd: [1700, 1900],
+      salesTalkRatio: [0.42, 0.48],
+      icebreakDuration: [55, 75],
+      minSegments: 100,
+      interruptPerHour: [3.5, 4.5],
+    },
+    pureAckBefore: { until: 85.6, maxChars: 12 },
+    icebreakEndsAt: 66.5,
+    paramError: {
+      needle: '整体保五年',
+      product: '全屋整装 · 悦享款',
+      paramKey: '质保',
+      why: 'B 必须说对：整体 2 年，隐蔽工程 5 年。不得再说成整体保五年',
+    },
+    mustHitSellingPoint: '甲醛可复测',
+    expectNextStepLocked: true,
+    docSync: {
+      file: 'docs/进度.md',
+      between: ['### T14 逐字稿样本 B', '### T15 种子数据'],
+      values: ['1898', '857.5', '993.1', '0.463', '66.5', '85.6', '6.5', '1097', '580.8', '3.79'],
+    },
+    anchors: [
+      [66.5, '今天最想先听哪一块', '破冰结束，进入业务话题'],
+      [85.6, '甲醛还是我们最怕的', '客户首次主动发言'],
+      [139.9, '第三方检测是请哪家机构来做', '甲醛话题追问 1'],
+      [183.6, '整改的日子算不算在那七十五天里面', '甲醛话题追问 2'],
+      [828.3, '你们还是比那家贵三万', '异议 1 价差三万'],
+      [891.2, '一口价是不是先把水分加进去了', '异议 2 一口价掺水'],
+      [1012.7, '网上那些停工投诉，你怎么解释', '异议 3 网上投诉'],
+      [1097, '整体两年，隐蔽工程五年', '★★ 质保说对'],
+      [580.8, '柜子做到顶，顶天立地', '★ 打断 1'],
+      [1411.9, '对对，就是这四笔', '★ 打断 2'],
+      [276.7, '谁拿主意、钱这块怎么商量的', '开放式提问（采购角色）'],
+      [338.1, '什么预算范围，超了会怎么办', '开放式提问（预算）'],
+      [1299.2, '还有什么是您爱人特别在意', '开放式提问（未问到的）'],
+      [1338.3, '地暖我们整装里不含', 'L2 地暖需求未匹配'],
+      [1796.2, '这周六下午三点', '下一步锁定'],
+      [16.9, '哦，挺热闹', '早期纯应答'],
+    ],
+    paramChecks: [
+      ['悦享款 一口价 128000', '128000', '全屋整装 · 悦享款', (p) => p.price === 128000],
+      ['悦享款 适用面积 85~100㎡', '85~100㎡', '全屋整装 · 悦享款', (p) => p.params.适用面积 === '85~100 ㎡'],
+      ['悦享款 工期 75 天', '75天', '全屋整装 · 悦享款', (p) => p.params.工期 === '75 天'],
+      ['悦享款 质保 整体两年', '整体两年', '全屋整装 · 悦享款', (p) => p.params.质保.includes('整体 2 年')],
+      ['悦享款 隐蔽工程五年', '隐蔽工程五年', '全屋整装 · 悦享款', (p) => p.params.质保.includes('隐蔽工程 5 年')],
+      ['基础包 价格 39800', '39800', '环保基础施工包', (p) => p.price === 39800],
+      ['基础包 环保等级 E0', 'E0', '环保基础施工包', (p) => p.params.环保等级.includes('E0')],
+      ['定制柜 价格 26800', '26800', '全屋定制柜 · 一体化设计', (p) => p.price === 26800],
+      ['定制柜 板材 爱格', '爱格', '全屋定制柜 · 一体化设计', (p) => p.params.板材.includes('爱格')],
+      ['定制柜 激光封边', '激光封边', '全屋定制柜 · 一体化设计', (p) => p.params.封边.includes('激光封边')],
+      ['定制柜 五金质保 10 年', '质保10年', '全屋定制柜 · 一体化设计', (p) => p.params.五金.includes('质保 10 年')],
+      ['定制柜 投影面积计价', '投影面积', '全屋定制柜 · 一体化设计', (p) => p.params.计价方式.includes('投影面积')],
+      ['老房局改 工期 28 天', '28天', '老房局改 · 厨卫翻新', (p) => p.params.工期 === '28 天'],
+    ],
   },
 }
 
@@ -269,7 +338,16 @@ check(
 check(interrupts.length === cl.interruptCount, '打断次数（销售起话落在客户区间内）', `实算 ${interrupts.length} @ start=${interrupts.map((x) => x.start).join(',') || '无'}`)
 check(reverse.length === 0, '无「客户压销售」的反向重叠', reverse.length)
 check(overlaps === cl.interruptCount, '全篇时间轴重叠处数 = 打断次数', `${overlaps}（其余片段首尾相接）`)
-check(iph <= 3, 'interrupt_per_hour ≤ 3（D1 阈值）', iph.toFixed(3))
+const iphOk = Array.isArray(r.interruptPerHour)
+  ? iph >= r.interruptPerHour[0] && iph <= r.interruptPerHour[1]
+  : iph <= 3
+check(
+  iphOk,
+  Array.isArray(r.interruptPerHour)
+    ? `interrupt_per_hour ∈ [${r.interruptPerHour.join(',')}]`
+    : 'interrupt_per_hour ≤ 3（D1 阈值）',
+  iph.toFixed(3)
+)
 check(qm(sales) === cl.salesQuestionCount, 'total_question_count（销售问号句）', `实算 ${qm(sales)} / 声称 ${cl.salesQuestionCount}`)
 check(qm(cust) === cl.customerQuestionMarks, 'customer_question_count（客户问号句）', `实算 ${qm(cust)}，分布在 ${cust.filter((s) => s.text.includes('？')).length} 条`)
 
@@ -324,6 +402,15 @@ if (cfg.mustMissSellingPoint) {
     miss && !miss.sales_keywords.some((k) => flat.includes(norm(k))),
     `「${cfg.mustMissSellingPoint}」刻意未命中`,
     '销售全程没讲 ' + miss.sales_keywords.join('/')
+  )
+}
+
+if (cfg.mustHitSellingPoint) {
+  const hit = products.flatMap((p) => p.sellingPoints).find((s) => s.tag === cfg.mustHitSellingPoint)
+  check(
+    hit && hit.sales_keywords.some((k) => flat.includes(norm(k))),
+    `「${cfg.mustHitSellingPoint}」必须命中`,
+    hit ? '销售讲了 ' + hit.sales_keywords.join('/') : '产品库无此卖点'
   )
 }
 
@@ -393,8 +480,8 @@ console.log(`  ${C.dim}profile_covered_count、open_question_count（开放与�
   目前只有注释里的声称值，没有实现来兜底。见 docs/进度.md 的 P5。
 
   推论的可靠度分两档：
-    · D1 = 1、D2 = 0 由上面的纯算术指标锁死，与实现无关。
-    · D3 = 0、D4 = 0 依赖上述语义判定，理论上可能被宽松的实现翻成 1 分。
+    · 说话占比、打断次数、问句数、时长由上面的纯算术指标锁死，与实现无关。
+    · 语义类五项没有实现兜底，依赖它们的维度理论上可能被宽松或严格的实现翻转。
   所以「总分 ${cl.expectedTotalScore} 分」是预期值，不是已验证的事实。${C.off}`)
 
 /* ---------- 汇总 ---------- */
