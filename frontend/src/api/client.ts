@@ -75,6 +75,28 @@ export function getProducts(): Promise<ProductRecord[]> {
   return api<ProductRecord[]>('/products')
 }
 
+export function getScripts(): Promise<ScriptRecord[]> {
+  return api<ScriptRecord[]>('/scripts')
+}
+
+export interface DifyConfigStatus {
+  configured: boolean
+  masked: string | null
+  adminProtected: boolean
+}
+
+export function getDifyConfig(): Promise<DifyConfigStatus> {
+  return api<DifyConfigStatus>('/config/dify')
+}
+
+export function saveDifyConfig(apiKey: string, adminToken: string): Promise<DifyConfigStatus> {
+  return api<DifyConfigStatus>('/config/dify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
+    body: JSON.stringify({ apiKey }),
+  })
+}
+
 export function createScript(input: { stage: string; scene: string; text: string; fromReviewId: number | null }): Promise<ScriptRecord> {
   return api<ScriptRecord>('/scripts', { method: 'POST', body: JSON.stringify(input) })
 }

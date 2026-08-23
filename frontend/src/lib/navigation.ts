@@ -21,7 +21,7 @@ export interface NavigationEnvironment {
 export function resolveRoute(pathname: string): RouteSnapshot {
   const cleanPath = pathname !== '/' && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname
   const effectivePath = cleanPath === '/' ? '/todos' : cleanPath
-  if (effectivePath === '/me/customers') {
+  if (['/me/customers', '/me/scripts', '/me/products', '/me/config'].includes(effectivePath)) {
     return { kind: 'page', route: 'me', path: effectivePath }
   }
   if (/^\/me\/customers\/[1-9]\d*$/.test(effectivePath)) {

@@ -10,6 +10,9 @@ import ReviewDetailsPage from './pages/ReviewDetailsPage.tsx'
 import ReviewResultPage from './pages/ReviewResultPage.tsx'
 import TodoPage from './pages/TodoPage.tsx'
 import VisitCreatePage from './pages/VisitCreatePage.tsx'
+import ScriptLibraryPage from './pages/ScriptLibraryPage.tsx'
+import ProductLibraryPage from './pages/ProductLibraryPage.tsx'
+import ConfigPage from './pages/ConfigPage.tsx'
 
 const routeCopy: Record<AppRoute, { eyebrow: string; description: string }> = {
   todos: { eyebrow: '今天先做重要的事', description: '这里将汇总拜访安排和复盘产生的待办。' },
@@ -33,8 +36,9 @@ export default function App() {
   const isReviewDetails = route.kind === 'page' && route.path === '/reviews/details'
   const isReviewResult = route.kind === 'page' && route.path === '/reviews/result'
   const isReviewReport = route.kind === 'page' && /^\/reviews\/report\/[1-9]\d*$/.test(route.path)
-  const pageLabel = route.kind === 'page' && route.path === '/me/customers'
-    ? '客户库'
+  const myPageLabels: Record<string, string> = { '/me/customers': '客户库', '/me/scripts': '话术库', '/me/products': '产品库', '/me/config': '配置' }
+  const pageLabel = route.kind === 'page' && myPageLabels[route.path]
+    ? myPageLabels[route.path]
     : isBattlecard ? '拜访作战包' : isCustomerDetail ? '客户档案' : activeItem?.label
 
   return (
@@ -83,6 +87,12 @@ export default function App() {
                 ? <VisitCreatePage onNavigate={navigate} />
               : route.path === '/me/customers'
                 ? <CustomerListPage onNavigate={navigate} />
+              : route.path === '/me/scripts'
+                ? <ScriptLibraryPage onNavigate={navigate} />
+              : route.path === '/me/products'
+                ? <ProductLibraryPage onNavigate={navigate} />
+              : route.path === '/me/config'
+                ? <ConfigPage onNavigate={navigate} />
                 : <PlaceholderPage route={route.route} label={activeItem?.label ?? ''} onNavigate={navigate} />
           ) : (
             <NotFound path={route.path} onNavigate={() => navigate('/todos')} />
@@ -149,22 +159,22 @@ function PlaceholderPage({ route, label, onNavigate }: { route: AppRoute; label:
 }
 
 function MeHome({ onNavigate }: { onNavigate: (path: string) => void }) {
+  const assets = [
+    { path: '/me/customers', eyebrow: '客户资产', title: '客户库', description: '查看客户意向和跟进阶段' },
+    { path: '/me/scripts', eyebrow: '个人资产', title: '话术库', description: '按谈判五段式查阅通用与复盘沉淀话术' },
+    { path: '/me/products', eyebrow: '产品资产', title: '产品库', description: '查阅价格、参数、卖点和常见异议答法' },
+    { path: '/me/config', eyebrow: '安全设置', title: '配置', description: '通过受保护的后端接口管理 Dify 配置' },
+  ]
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <a
-        href="/me/customers"
-        onClick={(event) => { event.preventDefault(); onNavigate('/me/customers') }}
-        className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600"
-      >
-        <span className="text-xs font-bold tracking-[0.14em] text-emerald-700">客户资产</span>
-        <h2 className="mt-2 text-xl font-bold">客户库</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-500">查看客户意向和跟进阶段</p>
-        <span className="mt-5 inline-block text-sm font-bold text-emerald-700 group-hover:translate-x-1">进入客户库 →</span>
-      </a>
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-slate-500">
-        <p className="font-semibold text-slate-700">更多个人资产</p>
-        <p className="mt-2 text-sm leading-6">话术库、产品库和配置将在后续任务接入。</p>
-      </div>
+      {assets.map((asset) => (
+        <a key={asset.path} href={asset.path} onClick={(event) => { event.preventDefault(); onNavigate(asset.path) }} className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">
+          <span className="text-xs font-bold tracking-[0.14em] text-emerald-700">{asset.eyebrow}</span>
+          <h2 className="mt-2 text-xl font-bold">{asset.title}</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">{asset.description}</p>
+          <span className="mt-5 inline-block text-sm font-bold text-emerald-700 group-hover:translate-x-1">进入{asset.title} →</span>
+        </a>
+      ))}
     </div>
   )
 }

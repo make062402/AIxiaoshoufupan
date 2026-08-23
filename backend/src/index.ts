@@ -7,6 +7,7 @@ import battlecard from './routes/battlecard.ts'
 import intent from './routes/intent.ts'
 import reviewSubmission from './routes/reviewSubmission.ts'
 import tasks from './routes/tasks.ts'
+import config from './routes/config.ts'
 
 const app = new Hono()
 
@@ -52,6 +53,7 @@ app.route('/api', intent)
 app.route('/api', reviewSubmission)
 app.route('/api', battlecard)
 app.route('/api', tasks)
+app.route('/api', config)
 app.route('/api', crud)
 
 const port = Number(process.env.PORT ?? 3000)
