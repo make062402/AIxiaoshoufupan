@@ -6,6 +6,7 @@ import crud from './routes/crud.ts'
 import battlecard from './routes/battlecard.ts'
 import intent from './routes/intent.ts'
 import reviewSubmission from './routes/reviewSubmission.ts'
+import tasks from './routes/tasks.ts'
 
 const app = new Hono()
 
@@ -50,6 +51,7 @@ app.post('/api/analyze', async (c) => {
 app.route('/api', intent)
 app.route('/api', reviewSubmission)
 app.route('/api', battlecard)
+app.route('/api', tasks)
 app.route('/api', crud)
 
 const port = Number(process.env.PORT ?? 3000)

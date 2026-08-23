@@ -1,4 +1,4 @@
-import type { AiResult, BattlecardAggregate, CustomerRecord, IntentLevel, IntentLogRecord, Metrics, ProductRecord, ReviewReportRecord, ReviewSummaryRecord, Scores, ScriptRecord, SellingPoint, Transcript } from '../types/types.ts'
+import type { AiResult, BattlecardAggregate, CustomerRecord, IntentLevel, IntentLogRecord, Metrics, ProductRecord, ReviewReportRecord, ReviewSummaryRecord, Scores, ScriptRecord, SellingPoint, TodoRecord, Transcript, VisitRecord } from '../types/types.ts'
 
 // 前端唯一的后端出口。后续所有请求都从这里走，便于统一加载态与错误处理（T30）。
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -99,4 +99,12 @@ export function getReviewReport(id: number): Promise<ReviewReportRecord> {
 
 export function getBattlecard(customerId: number): Promise<BattlecardAggregate> {
   return api<BattlecardAggregate>(`/battlecard/${customerId}`)
+}
+
+export function getTodos(): Promise<TodoRecord[]> { return api<TodoRecord[]>('/todos') }
+export function updateTodo(id: number, values: { done?: boolean; dueDate?: string | null }): Promise<TodoRecord> {
+  return api<TodoRecord>(`/todos/${id}/update`, { method: 'POST', body: JSON.stringify(values) })
+}
+export function scheduleVisit(input: { customerId?: number; newCustomer?: { name: string; identity?: string; coreNeed?: string; industry: string }; scene: string; scheduledAt: string }): Promise<{ customer: CustomerRecord; visit: VisitRecord }> {
+  return api('/visits/schedule', { method: 'POST', body: JSON.stringify(input) })
 }

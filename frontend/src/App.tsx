@@ -8,6 +8,8 @@ import BattlecardPage from './pages/BattlecardPage.tsx'
 import ReviewIntakePage from './pages/ReviewIntakePage.tsx'
 import ReviewDetailsPage from './pages/ReviewDetailsPage.tsx'
 import ReviewResultPage from './pages/ReviewResultPage.tsx'
+import TodoPage from './pages/TodoPage.tsx'
+import VisitCreatePage from './pages/VisitCreatePage.tsx'
 
 const routeCopy: Record<AppRoute, { eyebrow: string; description: string }> = {
   todos: { eyebrow: '今天先做重要的事', description: '这里将汇总拜访安排和复盘产生的待办。' },
@@ -75,6 +77,10 @@ export default function App() {
                 ? <ReviewDetailsPage onNavigate={navigate} />
                 : route.path === '/reviews'
                   ? <ReviewIntakePage onNavigate={navigate} />
+              : route.path === '/todos'
+                ? <TodoPage onNavigate={navigate} />
+              : route.path === '/new'
+                ? <VisitCreatePage onNavigate={navigate} />
               : route.path === '/me/customers'
                 ? <CustomerListPage onNavigate={navigate} />
                 : <PlaceholderPage route={route.route} label={activeItem?.label ?? ''} onNavigate={navigate} />
