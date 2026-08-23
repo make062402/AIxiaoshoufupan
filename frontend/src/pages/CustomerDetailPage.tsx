@@ -105,7 +105,10 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
           <h1 id="page-title" className="mt-2 text-3xl font-black tracking-tight md:text-4xl">{state.customer.name}</h1>
           <p className="mt-3 text-sm text-slate-500">8 项档案 · {missingCount} 项待确认</p>
         </div>
-        <span className="rounded-full bg-slate-900 px-4 py-2 text-sm font-black text-white" aria-label={`客户阶段 ${stage}`}>{stage} · 已复盘 {state.reviewCount} 次</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="rounded-full bg-slate-900 px-4 py-2 text-sm font-black text-white" aria-label={`客户阶段 ${stage}`}>{stage} · 已复盘 {state.reviewCount} 次</span>
+          <a href={`/me/customers/${customerId}/battlecard`} onClick={(event) => { event.preventDefault(); onNavigate(`/me/customers/${customerId}/battlecard`) }} className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-black text-white hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">查看作战包</a>
+        </div>
       </div>
 
       <form onSubmit={submit} className="space-y-4" noValidate>

@@ -1,4 +1,4 @@
-import type { AiResult, CustomerRecord, IntentLevel, IntentLogRecord, Metrics, ProductRecord, ReviewReportRecord, ReviewSummaryRecord, Scores, ScriptRecord, SellingPoint, Transcript } from '../types/types.ts'
+import type { AiResult, BattlecardAggregate, CustomerRecord, IntentLevel, IntentLogRecord, Metrics, ProductRecord, ReviewReportRecord, ReviewSummaryRecord, Scores, ScriptRecord, SellingPoint, Transcript } from '../types/types.ts'
 
 // 前端唯一的后端出口。后续所有请求都从这里走，便于统一加载态与错误处理（T30）。
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -95,4 +95,8 @@ export function submitReview(input: SubmitReviewInput): Promise<ReviewReportReco
 
 export function getReviewReport(id: number): Promise<ReviewReportRecord> {
   return api<ReviewReportRecord>(`/reviews/report/${id}`)
+}
+
+export function getBattlecard(customerId: number): Promise<BattlecardAggregate> {
+  return api<BattlecardAggregate>(`/battlecard/${customerId}`)
 }

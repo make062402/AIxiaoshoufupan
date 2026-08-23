@@ -27,6 +27,9 @@ export function resolveRoute(pathname: string): RouteSnapshot {
   if (/^\/me\/customers\/[1-9]\d*$/.test(effectivePath)) {
     return { kind: 'page', route: 'me', path: effectivePath }
   }
+  if (/^\/me\/customers\/[1-9]\d*\/battlecard$/.test(effectivePath)) {
+    return { kind: 'page', route: 'me', path: effectivePath }
+  }
   if (effectivePath === '/reviews/details' || effectivePath === '/reviews/result' || /^\/reviews\/report\/[1-9]\d*$/.test(effectivePath)) {
     return { kind: 'page', route: 'reviews', path: effectivePath }
   }

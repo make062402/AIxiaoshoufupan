@@ -4,6 +4,7 @@ import { loadTodoPreview, parseTodoPreviewScenario, type TodoPreviewItem } from 
 import { NAV_ITEMS, createNavigationStore, type AppRoute } from './lib/navigation.ts'
 import CustomerListPage from './pages/CustomerListPage.tsx'
 import CustomerDetailPage from './pages/CustomerDetailPage.tsx'
+import BattlecardPage from './pages/BattlecardPage.tsx'
 import ReviewIntakePage from './pages/ReviewIntakePage.tsx'
 import ReviewDetailsPage from './pages/ReviewDetailsPage.tsx'
 import ReviewResultPage from './pages/ReviewResultPage.tsx'
@@ -25,13 +26,14 @@ export default function App() {
   const activeItem = route.kind === 'page'
     ? NAV_ITEMS.find((item) => item.route === route.route)
     : undefined
+  const isBattlecard = route.kind === 'page' && /^\/me\/customers\/[1-9]\d*\/battlecard$/.test(route.path)
   const isCustomerDetail = route.kind === 'page' && /^\/me\/customers\/[1-9]\d*$/.test(route.path)
   const isReviewDetails = route.kind === 'page' && route.path === '/reviews/details'
   const isReviewResult = route.kind === 'page' && route.path === '/reviews/result'
   const isReviewReport = route.kind === 'page' && /^\/reviews\/report\/[1-9]\d*$/.test(route.path)
   const pageLabel = route.kind === 'page' && route.path === '/me/customers'
     ? '客户库'
-    : isCustomerDetail ? '客户档案' : activeItem?.label
+    : isBattlecard ? '拜访作战包' : isCustomerDetail ? '客户档案' : activeItem?.label
 
   return (
     <div className="min-h-screen bg-[#f4f7f5] text-slate-950">
@@ -63,7 +65,9 @@ export default function App() {
 
         <main id="main-content" className="mx-auto max-w-6xl px-5 py-10 pb-28 md:px-10 md:py-14">
           {route.kind === 'page' ? (
-            isCustomerDetail
+            isBattlecard
+              ? <BattlecardPage customerId={Number(route.path.split('/').at(-2))} onNavigate={navigate} />
+              : isCustomerDetail
               ? <CustomerDetailPage customerId={Number(route.path.split('/').at(-1))} onNavigate={navigate} />
               : isReviewResult || isReviewReport
                 ? <ReviewResultPage reviewId={isReviewReport ? Number(route.path.split('/').at(-1)) : undefined} onNavigate={navigate} />
