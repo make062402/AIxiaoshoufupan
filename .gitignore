@@ -1,0 +1,20 @@
+# 密钥：一旦提交将永久留在 git 历史里
+.env
+.env.*
+!.env.example
+
+node_modules/
+dist/
+build/
+
+# SQLite 数据库文件
+*.db
+*.db-journal
+*.sqlite
+
+.DS_Store
+*.log
+
+# Capacitor（T50）
+android/
+ios/
