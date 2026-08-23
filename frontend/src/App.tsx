@@ -5,7 +5,8 @@ import { NAV_ITEMS, createNavigationStore, type AppRoute } from './lib/navigatio
 import CustomerListPage from './pages/CustomerListPage.tsx'
 import CustomerDetailPage from './pages/CustomerDetailPage.tsx'
 import ReviewIntakePage from './pages/ReviewIntakePage.tsx'
-import ReviewDetailsPlaceholder from './pages/ReviewDetailsPlaceholder.tsx'
+import ReviewDetailsPage from './pages/ReviewDetailsPage.tsx'
+import ReviewResultPlaceholder from './pages/ReviewResultPlaceholder.tsx'
 
 const routeCopy: Record<AppRoute, { eyebrow: string; description: string }> = {
   todos: { eyebrow: '今天先做重要的事', description: '这里将汇总拜访安排和复盘产生的待办。' },
@@ -26,6 +27,7 @@ export default function App() {
     : undefined
   const isCustomerDetail = route.kind === 'page' && /^\/me\/customers\/[1-9]\d*$/.test(route.path)
   const isReviewDetails = route.kind === 'page' && route.path === '/reviews/details'
+  const isReviewResult = route.kind === 'page' && route.path === '/reviews/result'
   const pageLabel = route.kind === 'page' && route.path === '/me/customers'
     ? '客户库'
     : isCustomerDetail ? '客户档案' : activeItem?.label
@@ -62,8 +64,10 @@ export default function App() {
           {route.kind === 'page' ? (
             isCustomerDetail
               ? <CustomerDetailPage customerId={Number(route.path.split('/').at(-1))} onNavigate={navigate} />
+              : isReviewResult
+                ? <ReviewResultPlaceholder />
               : isReviewDetails
-                ? <ReviewDetailsPlaceholder onNavigate={navigate} />
+                ? <ReviewDetailsPage onNavigate={navigate} />
                 : route.path === '/reviews'
                   ? <ReviewIntakePage onNavigate={navigate} />
               : route.path === '/me/customers'

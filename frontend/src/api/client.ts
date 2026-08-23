@@ -42,6 +42,10 @@ export function getCustomer(id: number): Promise<CustomerRecord> {
   return api<CustomerRecord>(`/customers?id=${id}`)
 }
 
+export function createCustomer(input: { name: string; identity?: string | null; coreNeed?: string | null; industry: string }): Promise<CustomerRecord> {
+  return api<CustomerRecord>('/customers', { method: 'POST', body: JSON.stringify(input) })
+}
+
 export function saveCustomer(customer: CustomerRecord): Promise<CustomerRecord> {
   return api<CustomerRecord>('/customers', {
     method: 'POST',

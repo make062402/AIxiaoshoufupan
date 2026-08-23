@@ -2,6 +2,7 @@ import { transcriptA } from '../samples/transcriptA.ts'
 import type { Speaker, Transcript } from '../types/types.ts'
 
 export const REVIEW_DRAFT_STORAGE_KEY = 'sales-review:completed-transcript'
+export const REVIEW_CONTEXT_STORAGE_KEY = 'sales-review:analysis-context'
 export const DEMO_UPLOAD_DURATION_MS = 2400
 
 export interface ReviewTranscriptDraft {
@@ -9,6 +10,38 @@ export interface ReviewTranscriptDraft {
   source: 'paste' | 'upload-demo'
   salesSpeaker: Speaker
   createdAt: number
+}
+
+export interface ReviewContext {
+  customerId: number
+  scene: '一次拜访' | '二次拜访' | '多次拜访'
+  recordingSource: '现场录音' | '电话录音' | '其他'
+  language: '普通话' | '中英混杂'
+  industry: '装修' | '教培' | '广告'
+}
+
+export function missingReviewContext(context: Partial<ReviewContext>): string[] {
+  const missing: string[] = []
+  if (!Number.isInteger(context.customerId) || Number(context.customerId) <= 0) missing.push('客户')
+  if (!context.scene) missing.push('场景标签')
+  if (!context.recordingSource) missing.push('录音来源')
+  if (!context.language) missing.push('语言')
+  if (!context.industry) missing.push('行业')
+  return missing
+}
+
+export function saveReviewContext(storage: StorageLike, context: ReviewContext) {
+  if (missingReviewContext(context).length) throw new Error('复盘补充信息不完整')
+  storage.setItem(REVIEW_CONTEXT_STORAGE_KEY, JSON.stringify(context))
+}
+
+export function loadReviewContext(storage: StorageLike): ReviewContext | null {
+  const raw = storage.getItem(REVIEW_CONTEXT_STORAGE_KEY)
+  if (!raw) return null
+  try {
+    const value = JSON.parse(raw) as Partial<ReviewContext>
+    return missingReviewContext(value).length === 0 ? value as ReviewContext : null
+  } catch { return null }
 }
 
 export interface StorageLike {
