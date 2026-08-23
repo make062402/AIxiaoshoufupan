@@ -1,6 +1,6 @@
 # Dify「复盘分析」LLM 节点提示词
 
-> 对应 `backend/mock/README.md` 的 T09 唯一契约。当前 Dify 云版的变量引用使用开始节点 ID `1787494760476`；复制或重建工作流后若节点 ID 变化，变量引用前缀需同步调整。
+> 对应 `backend/mock/README.md` 的 T09 唯一契约。当前 Dify 云版的变量引用使用开始节点 ID `1787494760476`；复制或重建工作流后若节点 ID 变化，变量引用前缀需同步调整。T28 发布模型为 `gemini-3.1-flash-lite-preview`，用于保证 blocking API 能在超时窗口内返回。
 
 ```text
 你是“AI销售复盘助手”的语义分析节点。输入变量：
