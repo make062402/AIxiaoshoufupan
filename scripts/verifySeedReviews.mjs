@@ -26,7 +26,8 @@
  *   B 客户状态派生 —— reviews 条数 → S1/S2/S3，与 A 的期望一致。
  *   C 剧情主线 —— 何薇两条 d4 均为 0；张国庆 R1 < R2（改进主线）。
  *   D 逐字稿格式 —— 四字段、speaker 枚举、start<end、按 start 升序。
- *   E 引文对齐 —— aiResult 里每个 {quote,start} 都能在 transcript 中逐字命中。
+ *   E 引文对齐 —— aiResult 里每个 {quote,start}、**以及 needs 表每行的
+ *      {quote,timestampSec}**，都能在对应 review 的 transcript 中逐字命中。
  *   F metrics ↔ transcript 实算比对 —— 说话占比、时间轴重叠（打断）、
  *      客户问句数、卖点命中数。**这几项目前预期会 FAIL**，因为 P1 尚未执行；
  *      脚本会把实算值与存值并排打出来，T15-b/c/d 扩写完应全部转 PASS。
@@ -92,10 +93,12 @@ function loadFromDb() {
       id: r.id, customerId: r.customer_id, transcript: J(r.transcript),
       metrics: J(r.metrics), scores: J(r.scores), aiResult: J(r.ai_result),
     }))
+  const needRows = sqlite.prepare('SELECT * FROM needs ORDER BY id').all()
+    .map((n) => ({ id: n.id, reviewId: n.review_id, level: n.level, quote: n.quote, timestampSec: n.timestamp_sec }))
   const products = sqlite.prepare('SELECT * FROM products ORDER BY id').all()
     .map((p) => ({ id: p.id, name: p.name, industry: p.industry, sellingPoints: J(p.selling_points) }))
   sqlite.close()
-  return { customers, reviews, products }
+  return { customers, reviews, products, needRows }
 }
 
 /** 把 config/scoring.ts 的类型语法剥掉后交给 JS 引擎求值——阈值不在本脚本里抄第二份 */
@@ -148,7 +151,7 @@ const stateOf = (n) => (n === 0 ? 'S1' : n === 1 ? 'S2' : 'S3')
 
 /* ============================================================ */
 function main() {
-  const { customers, reviews, products } = loadFromDb()
+  const { customers, reviews, products, needRows } = loadFromDb()
 
   /* ---------- A 档案稀疏度 ---------- */
   head('A. 客户档案稀疏度（§3.1 八项口径，P2b）')
@@ -212,8 +215,25 @@ function main() {
       : ok(`R${i + 1}：${t.length} 条，${t[t.length - 1].end.toFixed(1)} 秒，格式全部合规`)
   })
 
-  /* ---------- E 引文对齐（坑一） ---------- */
-  head('E. aiResult 引文与逐字稿逐字一致（T37 的唯一定位依据）')
+  /* ---------- E 引文对齐（坑一） ----------
+   * 两个来源都要查，缺一个就有静默失配的盲区：
+   *   ① reviews.ai_result 里的 needs/highlights/... —— 键名是 start
+   *   ② needs 这张表本身 —— 键名是 timestamp_sec，语义完全相同，同样是 T37 的定位依据
+   * ② 是 T15-b 补进来的：在那之前 E 节只查 ①，结果 P1b 那次修复只改了 aiResult、
+   * 漏掉了 needs 表里的同一句，脚本却一路绿灯。补上当天就抓到了那一行。
+   */
+  head('E. 引文与逐字稿逐字一致（T37 的唯一定位依据）')
+  /** 逐条比对 {quote, 时间点} 是否能在 transcript 里逐字命中 */
+  const checkQuotes = (t, items, key) => {
+    const errs = []
+    for (const q of items) {
+      const at = q[key]
+      const seg = t.find((s) => Math.abs(s.start - at) < 1e-9)
+      if (!seg) { errs.push(`${key}=${at} 没有对应片段`); continue }
+      if (q.quote && !seg.text.includes(q.quote)) errs.push(`${key}=${at} 引文不在原文中：「${q.quote.slice(0, 18)}…」`)
+    }
+    return errs
+  }
   reviews.forEach((r, i) => {
     const t = r.transcript ?? []
     const a = r.aiResult ?? {}
@@ -221,14 +241,14 @@ function main() {
       ...(a.needs ?? []), ...(a.highlights ?? []), ...(a.improvements ?? []),
       ...(a.commitments ?? []), ...(a.missed_points ?? []), ...(a.next_actions ?? []),
     ].filter((x) => x && typeof x.start === 'number')
-    const errs = []
-    for (const q of quoted) {
-      const seg = t.find((s) => Math.abs(s.start - q.start) < 1e-9)
-      if (!seg) { errs.push(`start=${q.start} 没有对应片段`); continue }
-      if (q.quote && !seg.text.includes(q.quote)) errs.push(`start=${q.start} 引文不在原文中：「${q.quote.slice(0, 18)}…」`)
-    }
-    errs.length ? bad(`R${i + 1}：${errs.join('；')}`)
-      : ok(`R${i + 1}：${quoted.length} 处引用全部命中原文`)
+    const errs = checkQuotes(t, quoted, 'start')
+    errs.length ? bad(`R${i + 1} aiResult：${errs.join('；')}`)
+      : ok(`R${i + 1} aiResult：${quoted.length} 处引用全部命中原文`)
+
+    const mine = needRows.filter((n) => n.reviewId === r.id && typeof n.timestampSec === 'number')
+    const nErrs = checkQuotes(t, mine, 'timestampSec')
+    nErrs.length ? bad(`R${i + 1} needs 表：${nErrs.join('；')}`)
+      : ok(`R${i + 1} needs 表：${mine.length} 行引文全部命中原文`)
   })
 
   /* ---------- F metrics 实算比对（P1 未做完时预期 PENDING） ---------- */
