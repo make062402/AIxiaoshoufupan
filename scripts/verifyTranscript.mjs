@@ -30,8 +30,8 @@
  *     · need_matched_count / need_total_count（需求-卖点对齐率）
  *     · max_repeat_followup（同一话题追问，依赖话题聚类）
  *     · objection_response_rate / delay（依赖异议识别与「实质回应」判定）
- *   本脚本本身不调用这些语义证据实现；其中 max_repeat_followup 已由 T20 的
- *   verifyD3CodeMetrics.mjs 单独验证，其余项仍要等 T21 / T23 / T27。详见 P5。
+ *   本脚本本身不调用这些语义证据实现；max_repeat_followup 已由 T20、
+ *   objection_response_* 已由 T21 单独验证，其余项仍要等 T23 / T27。详见 P5。
  *
  * 【所以】本脚本通过 ≠ 样本验收通过。任务清单原文写了「T24 整体验证由你自己
  *   做，不能交给 AI」，这条对本脚本同样成立。
@@ -477,7 +477,7 @@ ${C.dim}   注意：这是存在性检查。同一数值在文档里出现多次
 section('九、本脚本证不了的语义项（各任务另有专项自检）')
 console.log(`  ${C.dim}profile_covered_count、open_question_count（开放与否）、need_matched/total、
   max_repeat_followup、objection_response_rate / delay —— 这五类需要理解语义，
-  本脚本不调用对应实现；max_repeat_followup 已由 T20 专项自检覆盖，其余仍见 P5。
+  本脚本不调用对应实现；追问与异议回应已由 T20 / T21 专项自检覆盖，其余仍见 P5。
 
   推论的可靠度分两档：
     · 说话占比、打断次数、问句数、时长由上面的纯算术指标锁死，与实现无关。

@@ -147,3 +147,110 @@ export function getMaxRepeatFollowup(
     return Math.max(maximum, validFollowups.size)
   }, 0)
 }
+
+/** 一条异议及其“实质回应”锚点；未回应时不提供 responseStartSeconds。 */
+export interface ObjectionEvidence {
+  objectionStartSeconds: number
+  responseStartSeconds?: number
+}
+
+function getValidObjectionResponses(
+  transcript: Transcript,
+  objections: readonly ObjectionEvidence[],
+): {
+  validObjectionCount: number
+  responseDelaysSeconds: number[]
+} {
+  const customerStarts = new Set(
+    transcript
+      .filter((segment) => segment.speaker === 'customer')
+      .map((segment) => segment.start),
+  )
+  const salesStarts = new Set(
+    transcript
+      .filter((segment) => segment.speaker === 'sales')
+      .map((segment) => segment.start),
+  )
+  const validObjections = objections.filter((objection) =>
+    customerStarts.has(objection.objectionStartSeconds),
+  )
+  const responseDelaysSeconds = validObjections.flatMap((objection) => {
+    const responseStartSeconds = objection.responseStartSeconds
+    if (
+      responseStartSeconds === undefined ||
+      responseStartSeconds < objection.objectionStartSeconds ||
+      !salesStarts.has(responseStartSeconds)
+    ) {
+      return []
+    }
+    return [responseStartSeconds - objection.objectionStartSeconds]
+  })
+
+  return {
+    validObjectionCount: validObjections.length,
+    responseDelaysSeconds,
+  }
+}
+
+/** 被实质回应的异议数 ÷ 全部有效异议数；没有异议时返回 1。 */
+export function getObjectionResponseRate(
+  transcript: Transcript,
+  objections: readonly ObjectionEvidence[],
+): number {
+  const { validObjectionCount, responseDelaysSeconds } =
+    getValidObjectionResponses(transcript, objections)
+
+  return validObjectionCount === 0
+    ? 1
+    : responseDelaysSeconds.length / validObjectionCount
+}
+
+/** 已被实质回应异议的平均回应间隔，单位：秒；无回应时返回最大安全整数。 */
+export function getAverageObjectionResponseDelaySeconds(
+  transcript: Transcript,
+  objections: readonly ObjectionEvidence[],
+): number {
+  const { responseDelaysSeconds } = getValidObjectionResponses(
+    transcript,
+    objections,
+  )
+  if (responseDelaysSeconds.length === 0) return Number.MAX_SAFE_INTEGER
+
+  return (
+    responseDelaysSeconds.reduce((total, delay) => total + delay, 0) /
+    responseDelaysSeconds.length
+  )
+}
+
+export interface NextStepElements {
+  hasTime: boolean
+  hasAction: boolean
+  hasOwner: boolean
+}
+
+/** 从结尾最近三段销售发言中识别“时间 + 动作 + 责任人”三要素。 */
+export function getNextStepElements(transcript: Transcript): NextStepElements {
+  const closingSalesText = sortTranscriptByStart(transcript)
+    .filter((segment) => segment.speaker === 'sales')
+    .slice(-3)
+    .map((segment) => segment.text)
+    .join(' ')
+
+  return {
+    hasTime:
+      /明天|后天|本周|下周|周[一二三四五六日天]|星期[一二三四五六日天]|上午|中午|下午|晚上|早上|\d{1,2}[点时]|[一二三四五六七八九十]{1,3}点/u.test(
+        closingSalesText,
+      ),
+    hasAction:
+      /上门|量房|发送|发到|发给|发您|整理|提交|确认|签约|签合同|打电话|联系|留给|带来|带设计师/u.test(
+        closingSalesText,
+      ),
+    hasOwner: /我|我们|本人|销售/u.test(closingSalesText),
+  }
+}
+
+/** 结尾同时具备明确时间、动作、责任人时，下一步才算锁定。 */
+export function isNextStepLocked(transcript: Transcript): boolean {
+  const elements = getNextStepElements(transcript)
+  return elements.hasTime && elements.hasAction && elements.hasOwner
+}
