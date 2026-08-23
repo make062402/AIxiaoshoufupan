@@ -30,8 +30,8 @@
  *     · need_matched_count / need_total_count（需求-卖点对齐率）
  *     · max_repeat_followup（同一话题追问，依赖话题聚类）
  *     · objection_response_rate / delay（依赖异议识别与「实质回应」判定）
- *   这五项要等 T20 / T22 / T27 写出来才算数。在那之前它们是「口径假设下的
- *   预期值」，不是已验证的事实。详见 docs/进度.md 的 P5。
+ *   本脚本本身不调用这些语义证据实现；其中 max_repeat_followup 已由 T20 的
+ *   verifyD3CodeMetrics.mjs 单独验证，其余项仍要等 T21 / T23 / T27。详见 P5。
  *
  * 【所以】本脚本通过 ≠ 样本验收通过。任务清单原文写了「T24 整体验证由你自己
  *   做，不能交给 AI」，这条对本脚本同样成立。
@@ -474,14 +474,14 @@ ${C.dim}   注意：这是存在性检查。同一数值在文档里出现多次
 }
 
 /* ---------- 9. 提醒 ---------- */
-section('九、本脚本证不了的（要等 T20 / T22 / T27）')
+section('九、本脚本证不了的语义项（各任务另有专项自检）')
 console.log(`  ${C.dim}profile_covered_count、open_question_count（开放与否）、need_matched/total、
   max_repeat_followup、objection_response_rate / delay —— 这五类需要理解语义，
-  目前只有注释里的声称值，没有实现来兜底。见 docs/进度.md 的 P5。
+  本脚本不调用对应实现；max_repeat_followup 已由 T20 专项自检覆盖，其余仍见 P5。
 
   推论的可靠度分两档：
     · 说话占比、打断次数、问句数、时长由上面的纯算术指标锁死，与实现无关。
-    · 语义类五项没有实现兜底，依赖它们的维度理论上可能被宽松或严格的实现翻转。
+    · 语义类必须结合各任务专项自检与人工锚点，不能只看本脚本的结果。
   所以「总分 ${cl.expectedTotalScore} 分」是预期值，不是已验证的事实。${C.off}`)
 
 /* ---------- 汇总 ---------- */

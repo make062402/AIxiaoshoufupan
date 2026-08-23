@@ -1,4 +1,4 @@
-import type { Transcript } from '../types/types.ts'
+import type { SellingPoint, Transcript } from '../types/types.ts'
 import {
   countQuestionMarks,
   getTotalDurationSeconds,
@@ -80,4 +80,70 @@ export function getSalesTalkRatio(transcript: Transcript): number {
 /** 客户发言中中英文问号的总数。 */
 export function getCustomerQuestionCount(transcript: Transcript): number {
   return countQuestionMarks(transcript, 'customer')
+}
+
+/** 销售发言中命中的不同卖点数；同一卖点出现多次仍只计 1。 */
+export function getSellingPointHitCount(
+  transcript: Transcript,
+  sellingPoints: readonly SellingPoint[],
+): number {
+  const salesText = transcript
+    .filter((segment) => segment.speaker === 'sales')
+    .map((segment) => segment.text)
+    .join('\n')
+    .replace(/\s+/gu, '')
+    .toLocaleLowerCase()
+
+  return sellingPoints.filter((sellingPoint) =>
+    sellingPoint.sales_keywords.some((keyword) => {
+      const normalizedKeyword = keyword
+        .replace(/\s+/gu, '')
+        .toLocaleLowerCase()
+      return normalizedKeyword.length > 0 && salesText.includes(normalizedKeyword)
+    }),
+  ).length
+}
+
+/**
+ * 一条客户话题的可回溯标注。首次提出不算追问，followup 中每个时间戳算一次追问。
+ */
+export interface CustomerTopicEvidence {
+  topic: string
+  initialStartSeconds: number
+  followupStartsSeconds: readonly number[]
+}
+
+/**
+ * 返回所有话题中最大的客户追问次数。
+ * 只接受能在逐字稿中定位到客户问句的追问时间戳，避免重复或无证据计数。
+ */
+export function getMaxRepeatFollowup(
+  transcript: Transcript,
+  topics: readonly CustomerTopicEvidence[],
+): number {
+  const customerStarts = new Set(
+    transcript
+      .filter((segment) => segment.speaker === 'customer')
+      .map((segment) => segment.start),
+  )
+  const customerQuestionStarts = new Set(
+    transcript
+      .filter(
+        (segment) =>
+          segment.speaker === 'customer' && /[？?]/u.test(segment.text),
+      )
+      .map((segment) => segment.start),
+  )
+
+  return topics.reduce((maximum, topic) => {
+    if (!customerStarts.has(topic.initialStartSeconds)) return maximum
+
+    const validFollowups = new Set(
+      topic.followupStartsSeconds.filter(
+        (start) =>
+          start > topic.initialStartSeconds && customerQuestionStarts.has(start),
+      ),
+    )
+    return Math.max(maximum, validFollowups.size)
+  }, 0)
 }
