@@ -43,7 +43,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f4f7f5] text-slate-950">
-      <a href="#main-content" className="fixed left-3 top-3 z-50 -translate-y-20 rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white focus:translate-y-0">
+      <a href="#main-content" className="fixed left-3 top-3 z-50 -translate-y-20 rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white focus:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400">
         跳到主要内容
       </a>
 
