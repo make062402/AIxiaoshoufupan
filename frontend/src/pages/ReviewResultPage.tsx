@@ -7,6 +7,7 @@ import { loadCompletedDraft, loadReviewContext } from '../lib/reviewDraft.ts'
 import { savePreparedReviewResult } from '../lib/reviewResultStore.ts'
 import { formatTranscriptTime, presentMetrics, segmentMatchesEvidence, type MetricKey } from '../lib/metricPresentation.ts'
 import { buildHighlightScript, EMPTY_INSIGHT_TEXT, hasEvidenceItems } from '../lib/reviewInsights.ts'
+import { commitmentMeta, EMPTY_FOLLOWUP_TEXT, hasReviewItems } from '../lib/reviewFollowups.ts'
 import { metricEvidenceA } from '../samples/metricEvidence.ts'
 import { transcriptA } from '../samples/transcriptA.ts'
 import type { AiResult, Transcript } from '../types/types.ts'
@@ -34,6 +35,7 @@ export default function ReviewResultPage() {
   const [savingHighlight, setSavingHighlight] = useState<number | null>(null)
   const [savedHighlights, setSavedHighlights] = useState<Set<number>>(() => new Set())
   const [saveError, setSaveError] = useState('')
+  const [focusedEvidenceStart, setFocusedEvidenceStart] = useState<number | null>(null)
   const savingHighlightsRef = useRef(new Set<number>())
   const savedHighlightsRef = useRef(new Set<number>())
 
@@ -82,8 +84,15 @@ export default function ReviewResultPage() {
   const anchorStart = draft.transcript.find((segment) => segmentMatchesEvidence(segment.start, segment.end, selected.evidence))?.start
 
   const selectMetric = (key: MetricKey) => {
+    setFocusedEvidenceStart(null)
     setSelectedMetric(key)
     window.requestAnimationFrame(() => document.getElementById(`transcript-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+  }
+
+
+  const locateEvidence = (start: number) => {
+    setFocusedEvidenceStart(start)
+    window.requestAnimationFrame(() => document.querySelector(`[data-transcript-start="${start}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
   }
 
   const saveHighlight = async (index: number) => {
@@ -130,7 +139,8 @@ export default function ReviewResultPage() {
             <div className="mt-4 max-h-[70vh] space-y-2 overflow-y-auto pr-1" aria-label="逐字稿原话">
               {draft.transcript.map((segment) => {
                 const highlighted = segmentMatchesEvidence(segment.start, segment.end, selected.evidence)
-                return <article id={highlighted && segment.start === anchorStart ? `transcript-${selected.key}` : undefined} key={`${segment.start}-${segment.speaker}`} className={`scroll-mt-24 rounded-xl border p-3 ${highlighted ? 'border-amber-400 bg-amber-100 ring-2 ring-amber-200' : 'border-transparent bg-slate-50'}`}>
+                const evidenceFocused = segment.start === focusedEvidenceStart
+                return <article data-transcript-start={segment.start} id={highlighted && segment.start === anchorStart ? `transcript-${selected.key}` : undefined} key={`${segment.start}-${segment.speaker}`} className={`scroll-mt-24 rounded-xl border p-3 ${highlighted || evidenceFocused ? 'border-amber-400 bg-amber-100 ring-2 ring-amber-200' : 'border-transparent bg-slate-50'}`}>
                   <p className="text-xs font-bold text-slate-500">{formatTranscriptTime(segment.start)} · {segment.speaker === 'sales' ? '销售' : '客户'}</p><p className="mt-1 text-sm leading-6 text-slate-800">{segment.text}</p>
                 </article>
               })}
@@ -151,7 +161,20 @@ export default function ReviewResultPage() {
           </div>
         </div>
       </section>
-      <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-sm font-semibold text-slate-500">漏讲、承诺与待办（T39）</div>
+      <section aria-labelledby="followup-title" className="mt-8">
+        <p className="text-sm font-bold text-emerald-700">把风险和行动说清楚</p><h2 id="followup-title" className="mt-1 text-2xl font-black">漏讲错讲、承诺与待办</h2>
+        <div className="mt-5 grid gap-5 lg:grid-cols-3">
+          <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-5"><h3 className="text-lg font-black text-rose-950">漏讲错讲</h3>
+            {!hasReviewItems(state.aiResult.missed_points) ? <p className="mt-4 text-sm text-slate-500">{EMPTY_FOLLOWUP_TEXT}</p> : <div className="mt-4 space-y-3">{state.aiResult.missed_points.map((item) => <article key={`${item.start}-${item.text}`} className="rounded-xl bg-white p-4 shadow-sm"><p className="font-bold">{item.text}</p>{item.quote && <blockquote className="mt-2 border-l-4 border-rose-300 pl-3 text-sm leading-6 text-slate-600">“{item.quote}”</blockquote>}{typeof item.start === 'number' && <button type="button" onClick={() => locateEvidence(item.start as number)} className="mt-3 text-sm font-bold text-rose-700 underline decoration-2 underline-offset-4">回溯原话 · {formatTranscriptTime(item.start)}</button>}</article>)}</div>}
+          </div>
+          <div className="rounded-2xl border border-sky-200 bg-sky-50/60 p-5"><h3 className="text-lg font-black text-sky-950">承诺清单</h3>
+            {!hasReviewItems(state.aiResult.commitments) ? <p className="mt-4 text-sm text-slate-500">{EMPTY_FOLLOWUP_TEXT}</p> : <div className="mt-4 space-y-3">{state.aiResult.commitments.map((item) => <article key={`${item.start}-${item.text}`} className="rounded-xl bg-white p-4 shadow-sm"><p className="font-bold">{item.text}</p>{commitmentMeta(item).map((meta) => <p key={meta} className="mt-2 text-xs font-bold text-sky-700">{meta}</p>)}</article>)}</div>}
+          </div>
+          <div className="rounded-2xl border border-violet-200 bg-violet-50/60 p-5"><h3 className="text-lg font-black text-violet-950">下一步待办草稿</h3><p className="mt-1 text-xs text-violet-700">尚未写入待办，统一在保存复盘时落库。</p>
+            {!hasReviewItems(state.aiResult.next_actions) ? <p className="mt-4 text-sm text-slate-500">{EMPTY_FOLLOWUP_TEXT}</p> : <ol className="mt-4 space-y-3">{state.aiResult.next_actions.map((action, index) => <li key={action} className="flex gap-3 rounded-xl bg-white p-4 shadow-sm"><span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-violet-100 text-sm font-black text-violet-800">{index + 1}</span><span className="text-sm font-semibold leading-6">{action}</span></li>)}</ol>}
+          </div>
+        </div>
+      </section>
     </section>
   )
 }
