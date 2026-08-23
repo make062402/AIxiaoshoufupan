@@ -4,6 +4,8 @@ import { loadTodoPreview, parseTodoPreviewScenario, type TodoPreviewItem } from 
 import { NAV_ITEMS, createNavigationStore, type AppRoute } from './lib/navigation.ts'
 import CustomerListPage from './pages/CustomerListPage.tsx'
 import CustomerDetailPage from './pages/CustomerDetailPage.tsx'
+import ReviewIntakePage from './pages/ReviewIntakePage.tsx'
+import ReviewDetailsPlaceholder from './pages/ReviewDetailsPlaceholder.tsx'
 
 const routeCopy: Record<AppRoute, { eyebrow: string; description: string }> = {
   todos: { eyebrow: '今天先做重要的事', description: '这里将汇总拜访安排和复盘产生的待办。' },
@@ -23,6 +25,7 @@ export default function App() {
     ? NAV_ITEMS.find((item) => item.route === route.route)
     : undefined
   const isCustomerDetail = route.kind === 'page' && /^\/me\/customers\/[1-9]\d*$/.test(route.path)
+  const isReviewDetails = route.kind === 'page' && route.path === '/reviews/details'
   const pageLabel = route.kind === 'page' && route.path === '/me/customers'
     ? '客户库'
     : isCustomerDetail ? '客户档案' : activeItem?.label
@@ -59,6 +62,10 @@ export default function App() {
           {route.kind === 'page' ? (
             isCustomerDetail
               ? <CustomerDetailPage customerId={Number(route.path.split('/').at(-1))} onNavigate={navigate} />
+              : isReviewDetails
+                ? <ReviewDetailsPlaceholder onNavigate={navigate} />
+                : route.path === '/reviews'
+                  ? <ReviewIntakePage onNavigate={navigate} />
               : route.path === '/me/customers'
                 ? <CustomerListPage onNavigate={navigate} />
                 : <PlaceholderPage route={route.route} label={activeItem?.label ?? ''} onNavigate={navigate} />
