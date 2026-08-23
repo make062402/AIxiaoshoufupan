@@ -3,6 +3,7 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { analyzeTranscript, isMockEnabled, type AnalyzeInput } from './dify.ts'
 import crud from './routes/crud.ts'
+import battlecard from './routes/battlecard.ts'
 import intent from './routes/intent.ts'
 import reviewSubmission from './routes/reviewSubmission.ts'
 
@@ -48,6 +49,7 @@ app.post('/api/analyze', async (c) => {
  */
 app.route('/api', intent)
 app.route('/api', reviewSubmission)
+app.route('/api', battlecard)
 app.route('/api', crud)
 
 const port = Number(process.env.PORT ?? 3000)
