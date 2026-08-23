@@ -325,8 +325,11 @@ export interface ReviewReportRecord {
 export interface ProductRecord {
   id: number;
   name: string;
-  industry: string;
+  price: number | null;
+  params: Record<string, string> | null;
   sellingPoints: SellingPoint[];
+  objections: { objection: string; answer: string }[] | null;
+  industry: string | null;
 }
 
 export interface ScriptRecord {
@@ -335,6 +338,27 @@ export interface ScriptRecord {
   scene: string | null;
   text: string;
   fromReviewId: number | null;
+}
+
+export interface VisitRecord {
+  id: number;
+  customerId: number;
+  scheduledAt: string | null;
+  status: string | null;
+  scene: string | null;
+}
+
+/** T41 返回的原始聚合结果；推荐与缺口排序由 T42 在前端统一完成。 */
+export interface BattlecardAggregate {
+  customer: CustomerRecord;
+  reviewCount: number;
+  stage: 'S1' | 'S2' | 'S3';
+  latestReview: ReviewRecord | null;
+  latestReviewUnsatisfiedNeeds: NeedRecord[];
+  products: ProductRecord[];
+  scripts: ScriptRecord[];
+  todos: TodoRecord[];
+  visits: VisitRecord[];
 }
 
 export interface IntentLogRecord {
