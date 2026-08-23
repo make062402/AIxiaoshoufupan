@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { EmptyState, ErrorState, LoadingState } from './components/PageStates.tsx'
+import { loadTodoPreview, parseTodoPreviewScenario, type TodoPreviewItem } from './lib/demoPageState.ts'
 import { NAV_ITEMS, createNavigationStore, type AppRoute } from './lib/navigation.ts'
 
 const routeCopy: Record<AppRoute, { eyebrow: string; description: string }> = {
@@ -103,11 +105,69 @@ function PlaceholderPage({ route, label }: { route: AppRoute; label: string }) {
         <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">{copy.description}</p>
       </div>
       <div className="px-6 py-8 md:px-12">
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
-          <p className="font-semibold text-slate-700">页面骨架已就绪</p>
-          <p className="mt-2 text-sm text-slate-500">业务内容将在对应任务中逐步接入。</p>
-        </div>
+        {route === 'todos' ? <TodoPreview /> : (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
+            <p className="font-semibold text-slate-700">页面骨架已就绪</p>
+            <p className="mt-2 text-sm text-slate-500">业务内容将在对应任务中逐步接入。</p>
+          </div>
+        )}
       </div>
+    </section>
+  )
+}
+
+type PreviewState =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'ready'; items: TodoPreviewItem[] }
+
+function TodoPreview() {
+  const scenario = parseTodoPreviewScenario(new URLSearchParams(window.location.search).get('demo'))
+  const [attempt, setAttempt] = useState(0)
+  const [state, setState] = useState<PreviewState>({ status: 'loading' })
+
+  useEffect(() => {
+    let active = true
+    loadTodoPreview(scenario, attempt)
+      .then((items) => { if (active) setState({ status: 'ready', items }) })
+      .catch(() => { if (active) setState({ status: 'error' }) })
+    return () => { active = false }
+  }, [attempt, scenario])
+
+  return (
+    <section aria-labelledby="todo-preview-title">
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">页面状态示范</p>
+          <h2 id="todo-preview-title" className="mt-2 text-xl font-bold">今日待办预览</h2>
+        </div>
+        <span className="text-xs text-slate-400">数据接入前占位</span>
+      </div>
+
+      {state.status === 'loading' && <LoadingState message="正在加载今日待办…" />}
+      {state.status === 'error' && (
+        <ErrorState
+          title="待办加载失败"
+          message="暂时无法取得今日待办，请检查连接后再试。"
+          onRetry={() => {
+            setState({ status: 'loading' })
+            setAttempt((current) => current + 1)
+          }}
+        />
+      )}
+      {state.status === 'ready' && state.items.length === 0 && (
+        <EmptyState title="今天还没有待办" message="新的拜访安排和复盘动作会出现在这里。" />
+      )}
+      {state.status === 'ready' && state.items.length > 0 && (
+        <ul className="space-y-3" aria-label="今日待办">
+          {state.items.map((item) => (
+            <li key={item.id} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <span className="font-semibold text-slate-800">{item.text}</span>
+              <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-500">{item.time}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }
