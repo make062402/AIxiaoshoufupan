@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
-import { analyzeTranscript, getProducts, getReviews } from '../api/client.ts'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { analyzeTranscript, createScript, getProducts, getReviews } from '../api/client.ts'
 import { ErrorState, LoadingState } from '../components/PageStates.tsx'
 import { PROFILE_FIELDS } from '../config/scoring.ts'
 import { buildReviewAnalysis, type ReviewAnalysis } from '../lib/reviewAnalysis.ts'
 import { loadCompletedDraft, loadReviewContext } from '../lib/reviewDraft.ts'
 import { savePreparedReviewResult } from '../lib/reviewResultStore.ts'
 import { formatTranscriptTime, presentMetrics, segmentMatchesEvidence, type MetricKey } from '../lib/metricPresentation.ts'
+import { buildHighlightScript, EMPTY_INSIGHT_TEXT, hasEvidenceItems } from '../lib/reviewInsights.ts'
 import { metricEvidenceA } from '../samples/metricEvidence.ts'
 import { transcriptA } from '../samples/transcriptA.ts'
 import type { AiResult, Transcript } from '../types/types.ts'
@@ -30,6 +31,11 @@ export default function ReviewResultPage() {
   const [requestKey, setRequestKey] = useState(0)
   const [state, setState] = useState<ResultState>({ status: 'loading' })
   const [selectedMetric, setSelectedMetric] = useState<MetricKey>('icebreak_duration')
+  const [savingHighlight, setSavingHighlight] = useState<number | null>(null)
+  const [savedHighlights, setSavedHighlights] = useState<Set<number>>(() => new Set())
+  const [saveError, setSaveError] = useState('')
+  const savingHighlightsRef = useRef(new Set<number>())
+  const savedHighlightsRef = useRef(new Set<number>())
 
   const load = useCallback(() => {
     let active = true
@@ -69,7 +75,8 @@ export default function ReviewResultPage() {
   if (state.status === 'error') return <ErrorState title="复盘分析失败" message={state.message} onRetry={() => { setState({ status: 'loading' }); setRequestKey((key) => key + 1) }} />
 
   const draft = loadCompletedDraft(sessionStorage)
-  if (!draft) return <ErrorState title="逐字稿已失效" message="请返回复盘入口重新准备样例 A。" onRetry={() => window.location.assign('/reviews')} />
+  const context = loadReviewContext(sessionStorage)
+  if (!draft || !context) return <ErrorState title="逐字稿已失效" message="请返回复盘入口重新准备样例 A。" onRetry={() => window.location.assign('/reviews')} />
   const metrics = presentMetrics(state.analysis, draft.transcript)
   const selected = metrics.find((metric) => metric.key === selectedMetric) ?? metrics[0]
   const anchorStart = draft.transcript.find((segment) => segmentMatchesEvidence(segment.start, segment.end, selected.evidence))?.start
@@ -77,6 +84,23 @@ export default function ReviewResultPage() {
   const selectMetric = (key: MetricKey) => {
     setSelectedMetric(key)
     window.requestAnimationFrame(() => document.getElementById(`transcript-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+  }
+
+  const saveHighlight = async (index: number) => {
+    if (savingHighlightsRef.current.has(index) || savedHighlightsRef.current.has(index)) return
+    savingHighlightsRef.current.add(index)
+    setSavingHighlight(index)
+    setSaveError('')
+    try {
+      await createScript(buildHighlightScript(state.aiResult.highlights[index], context))
+      savedHighlightsRef.current.add(index)
+      setSavedHighlights(new Set(savedHighlightsRef.current))
+    } catch {
+      setSaveError('话术保存失败，请检查本地后端后重试。')
+    } finally {
+      savingHighlightsRef.current.delete(index)
+      setSavingHighlight(null)
+    }
   }
 
   return (
@@ -115,7 +139,19 @@ export default function ReviewResultPage() {
           </div>
         </div>
       </section>
-      <div className="mt-6 grid gap-4 md:grid-cols-2">{['亮点与改进（T38）','漏讲、承诺与待办（T39）'].map((text) => <div key={text} className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-sm font-semibold text-slate-500">{text}</div>)}</div>
+      <section aria-labelledby="insights-title" className="mt-8">
+        <p className="text-sm font-bold text-emerald-700">把有效经验留下来</p><h2 id="insights-title" className="mt-1 text-2xl font-black">亮点与改进点</h2>
+        {saveError && <p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-800">{saveError}</p>}
+        <div className="mt-5 grid gap-5 md:grid-cols-2">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5"><h3 className="text-lg font-black text-emerald-900">本次亮点</h3>
+            {!hasEvidenceItems(state.aiResult.highlights) ? <p className="mt-4 text-sm text-slate-500">{EMPTY_INSIGHT_TEXT}</p> : <div className="mt-4 space-y-3">{state.aiResult.highlights.map((item, index) => <article key={`${item.start}-${item.text}`} className="rounded-xl bg-white p-4 shadow-sm"><p className="font-bold text-slate-900">{item.text}</p>{item.quote && <blockquote className="mt-2 border-l-4 border-emerald-300 pl-3 text-sm leading-6 text-slate-600">“{item.quote}”</blockquote>}{typeof item.start === 'number' && <p className="mt-2 text-xs font-bold text-emerald-700">{formatTranscriptTime(item.start)}</p>}<button type="button" disabled={savingHighlight === index || savedHighlights.has(index)} onClick={() => void saveHighlight(index)} className="mt-3 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-emerald-300">{savedHighlights.has(index) ? '已保存' : savingHighlight === index ? '保存中…' : '存入话术库'}</button></article>)}</div>}
+          </div>
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5"><h3 className="text-lg font-black text-amber-950">改进点</h3>
+            {!hasEvidenceItems(state.aiResult.improvements) ? <p className="mt-4 text-sm text-slate-500">{EMPTY_INSIGHT_TEXT}</p> : <div className="mt-4 space-y-3">{state.aiResult.improvements.map((item) => <article key={`${item.start}-${item.text}`} className="rounded-xl bg-white p-4 shadow-sm"><p className="font-bold text-slate-900">{item.text}</p>{item.quote && <blockquote className="mt-2 border-l-4 border-amber-300 pl-3 text-sm leading-6 text-slate-600">“{item.quote}”</blockquote>}{typeof item.start === 'number' && <p className="mt-2 text-xs font-bold text-amber-800">{formatTranscriptTime(item.start)}</p>}</article>)}</div>}
+          </div>
+        </div>
+      </section>
+      <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-sm font-semibold text-slate-500">漏讲、承诺与待办（T39）</div>
     </section>
   )
 }

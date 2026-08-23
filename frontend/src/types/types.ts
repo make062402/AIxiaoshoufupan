@@ -286,6 +286,14 @@ export interface ProductRecord {
   sellingPoints: SellingPoint[];
 }
 
+export interface ScriptRecord {
+  id: number;
+  stage: string | null;
+  scene: string | null;
+  text: string;
+  fromReviewId: number | null;
+}
+
 export interface IntentLogRecord {
   id: number;
   customerId: number;
