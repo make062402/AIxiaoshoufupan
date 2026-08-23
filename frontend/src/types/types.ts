@@ -277,6 +277,7 @@ export interface ReviewSummaryRecord {
   id: number;
   customerId: number;
   scores?: Scores;
+  createdAt?: string;
 }
 
 export interface ReviewRecord {

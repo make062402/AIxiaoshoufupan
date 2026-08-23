@@ -13,6 +13,8 @@ import VisitCreatePage from './pages/VisitCreatePage.tsx'
 import ScriptLibraryPage from './pages/ScriptLibraryPage.tsx'
 import ProductLibraryPage from './pages/ProductLibraryPage.tsx'
 import ConfigPage from './pages/ConfigPage.tsx'
+import TeamReportPage, { ManagerRoleRequired } from './pages/TeamReportPage.tsx'
+import { loadDemoRole, saveDemoRole, type DemoRole } from './lib/demoRole.ts'
 
 const routeCopy: Record<AppRoute, { eyebrow: string; description: string }> = {
   todos: { eyebrow: '今天先做重要的事', description: '这里将汇总拜访安排和复盘产生的待办。' },
@@ -24,6 +26,7 @@ const routeCopy: Record<AppRoute, { eyebrow: string; description: string }> = {
 export default function App() {
   const navigation = useMemo(() => createNavigationStore(window), [])
   const [route, setRoute] = useState(() => navigation.getSnapshot())
+  const [demoRole, setDemoRole] = useState<DemoRole>(() => loadDemoRole(sessionStorage))
 
   useEffect(() => navigation.subscribe(setRoute), [navigation])
 
@@ -36,7 +39,7 @@ export default function App() {
   const isReviewDetails = route.kind === 'page' && route.path === '/reviews/details'
   const isReviewResult = route.kind === 'page' && route.path === '/reviews/result'
   const isReviewReport = route.kind === 'page' && /^\/reviews\/report\/[1-9]\d*$/.test(route.path)
-  const myPageLabels: Record<string, string> = { '/me/customers': '客户库', '/me/scripts': '话术库', '/me/products': '产品库', '/me/config': '配置' }
+  const myPageLabels: Record<string, string> = { '/me/customers': '客户库', '/me/scripts': '话术库', '/me/products': '产品库', '/me/config': '配置', '/me/team-reports': '团队报告' }
   const pageLabel = route.kind === 'page' && myPageLabels[route.path]
     ? myPageLabels[route.path]
     : isBattlecard ? '拜访作战包' : isCustomerDetail ? '客户档案' : activeItem?.label
@@ -93,7 +96,9 @@ export default function App() {
                 ? <ProductLibraryPage onNavigate={navigate} />
               : route.path === '/me/config'
                 ? <ConfigPage onNavigate={navigate} />
-                : <PlaceholderPage route={route.route} label={activeItem?.label ?? ''} onNavigate={navigate} />
+              : route.path === '/me/team-reports'
+                ? demoRole === 'manager' ? <TeamReportPage onNavigate={navigate} /> : <ManagerRoleRequired onNavigate={navigate} />
+                : <PlaceholderPage route={route.route} label={activeItem?.label ?? ''} onNavigate={navigate} demoRole={demoRole} onRoleChange={(role) => { saveDemoRole(sessionStorage, role); setDemoRole(role) }} />
           ) : (
             <NotFound path={route.path} onNavigate={() => navigate('/todos')} />
           )}
@@ -137,7 +142,7 @@ function NavLink({ item, active, onNavigate, compact = false }: { item: (typeof 
   )
 }
 
-function PlaceholderPage({ route, label, onNavigate }: { route: AppRoute; label: string; onNavigate: (path: string) => void }) {
+function PlaceholderPage({ route, label, onNavigate, demoRole, onRoleChange }: { route: AppRoute; label: string; onNavigate: (path: string) => void; demoRole: DemoRole; onRoleChange: (role: DemoRole) => void }) {
   const copy = routeCopy[route]
   return (
     <section aria-labelledby="page-title" className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
@@ -147,7 +152,7 @@ function PlaceholderPage({ route, label, onNavigate }: { route: AppRoute; label:
         <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">{copy.description}</p>
       </div>
       <div className="px-6 py-8 md:px-12">
-        {route === 'todos' ? <TodoPreview /> : route === 'me' ? <MeHome onNavigate={onNavigate} /> : (
+        {route === 'todos' ? <TodoPreview /> : route === 'me' ? <MeHome onNavigate={onNavigate} role={demoRole} onRoleChange={onRoleChange} /> : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
             <p className="font-semibold text-slate-700">页面骨架已就绪</p>
             <p className="mt-2 text-sm text-slate-500">业务内容将在对应任务中逐步接入。</p>
@@ -158,23 +163,30 @@ function PlaceholderPage({ route, label, onNavigate }: { route: AppRoute; label:
   )
 }
 
-function MeHome({ onNavigate }: { onNavigate: (path: string) => void }) {
+function MeHome({ onNavigate, role, onRoleChange }: { onNavigate: (path: string) => void; role: DemoRole; onRoleChange: (role: DemoRole) => void }) {
   const assets = [
     { path: '/me/customers', eyebrow: '客户资产', title: '客户库', description: '查看客户意向和跟进阶段' },
     { path: '/me/scripts', eyebrow: '个人资产', title: '话术库', description: '按谈判五段式查阅通用与复盘沉淀话术' },
     { path: '/me/products', eyebrow: '产品资产', title: '产品库', description: '查阅价格、参数、卖点和常见异议答法' },
     { path: '/me/config', eyebrow: '安全设置', title: '配置', description: '通过受保护的后端接口管理 Dify 配置' },
+    ...(role === 'manager' ? [{ path: '/me/team-reports', eyebrow: '主管只读', title: '团队报告', description: '查看单一演示销售账号及其全部复盘' }] : []),
   ]
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {assets.map((asset) => (
-        <a key={asset.path} href={asset.path} onClick={(event) => { event.preventDefault(); onNavigate(asset.path) }} className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">
-          <span className="text-xs font-bold tracking-[0.14em] text-emerald-700">{asset.eyebrow}</span>
-          <h2 className="mt-2 text-xl font-bold">{asset.title}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">{asset.description}</p>
-          <span className="mt-5 inline-block text-sm font-bold text-emerald-700 group-hover:translate-x-1">进入{asset.title} →</span>
-        </a>
-      ))}
+    <div>
+      <section aria-labelledby="demo-role-title" className="mb-5 rounded-2xl border border-sky-200 bg-sky-50 p-5">
+        <p className="text-xs font-black tracking-[0.14em] text-sky-800">仅用于 DEMO 展示，不是身份认证</p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-4"><div><h2 id="demo-role-title" className="font-black">查看角色</h2><p className="mt-1 text-sm text-sky-950">当前：{role === 'sales' ? '销售' : '主管'}</p></div><div role="group" aria-label="演示角色" className="grid grid-cols-2 rounded-xl bg-white p-1"><button onClick={() => onRoleChange('sales')} aria-pressed={role === 'sales'} className={`rounded-lg px-4 py-2 text-sm font-black ${role === 'sales' ? 'bg-sky-700 text-white' : 'text-slate-600'}`}>销售</button><button onClick={() => onRoleChange('manager')} aria-pressed={role === 'manager'} className={`rounded-lg px-4 py-2 text-sm font-black ${role === 'manager' ? 'bg-sky-700 text-white' : 'text-slate-600'}`}>主管</button></div></div>
+      </section>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {assets.map((asset) => (
+          <a key={asset.path} href={asset.path} onClick={(event) => { event.preventDefault(); onNavigate(asset.path) }} className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">
+            <span className="text-xs font-bold tracking-[0.14em] text-emerald-700">{asset.eyebrow}</span>
+            <h2 className="mt-2 text-xl font-bold">{asset.title}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">{asset.description}</p>
+            <span className="mt-5 inline-block text-sm font-bold text-emerald-700 group-hover:translate-x-1">进入{asset.title} →</span>
+          </a>
+        ))}
+      </div>
     </div>
   )
 }
