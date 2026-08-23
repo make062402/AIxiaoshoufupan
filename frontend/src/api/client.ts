@@ -1,4 +1,4 @@
-import type { AiResult, CustomerRecord, IntentLevel, IntentLogRecord, ProductRecord, ReviewSummaryRecord, ScriptRecord, SellingPoint, Transcript } from '../types/types.ts'
+import type { AiResult, CustomerRecord, IntentLevel, IntentLogRecord, Metrics, ProductRecord, ReviewReportRecord, ReviewSummaryRecord, Scores, ScriptRecord, SellingPoint, Transcript } from '../types/types.ts'
 
 // 前端唯一的后端出口。后续所有请求都从这里走，便于统一加载态与错误处理（T30）。
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -75,6 +75,24 @@ export function getProducts(): Promise<ProductRecord[]> {
   return api<ProductRecord[]>('/products')
 }
 
-export function createScript(input: { stage: string; scene: string; text: string; fromReviewId: null }): Promise<ScriptRecord> {
+export function createScript(input: { stage: string; scene: string; text: string; fromReviewId: number | null }): Promise<ScriptRecord> {
   return api<ScriptRecord>('/scripts', { method: 'POST', body: JSON.stringify(input) })
+}
+
+export interface SubmitReviewInput {
+  customerId: number
+  visitId: number | null
+  transcript: Transcript
+  metrics: Metrics
+  scores: Scores
+  aiResult: AiResult
+  intentSuggestion: { level: IntentLevel; score: number }
+}
+
+export function submitReview(input: SubmitReviewInput): Promise<ReviewReportRecord> {
+  return api<ReviewReportRecord>('/reviews/submit', { method: 'POST', body: JSON.stringify(input) })
+}
+
+export function getReviewReport(id: number): Promise<ReviewReportRecord> {
+  return api<ReviewReportRecord>(`/reviews/report/${id}`)
 }

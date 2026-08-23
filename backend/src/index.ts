@@ -4,6 +4,7 @@ import { Hono } from 'hono'
 import { analyzeTranscript, isMockEnabled, type AnalyzeInput } from './dify.ts'
 import crud from './routes/crud.ts'
 import intent from './routes/intent.ts'
+import reviewSubmission from './routes/reviewSubmission.ts'
 
 const app = new Hono()
 
@@ -43,9 +44,10 @@ app.post('/api/analyze', async (c) => {
 /**
  * 通用增删改查（T11）—— 挂在 /api 下，实现见 src/routes/crud.ts。
  * 必须挂在 /api/ping、/api/analyze 之后：Hono 按注册顺序匹配，
- * 先注册的专用接口优先，剩下的 /api/:table 才落到通用 CRUD。
+ * intent 与复盘原子提交等专用接口先注册，剩下的 /api/:table 才落到通用 CRUD。
  */
 app.route('/api', intent)
+app.route('/api', reviewSubmission)
 app.route('/api', crud)
 
 const port = Number(process.env.PORT ?? 3000)

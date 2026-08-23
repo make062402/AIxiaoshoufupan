@@ -28,6 +28,7 @@ export default function App() {
   const isCustomerDetail = route.kind === 'page' && /^\/me\/customers\/[1-9]\d*$/.test(route.path)
   const isReviewDetails = route.kind === 'page' && route.path === '/reviews/details'
   const isReviewResult = route.kind === 'page' && route.path === '/reviews/result'
+  const isReviewReport = route.kind === 'page' && /^\/reviews\/report\/[1-9]\d*$/.test(route.path)
   const pageLabel = route.kind === 'page' && route.path === '/me/customers'
     ? '客户库'
     : isCustomerDetail ? '客户档案' : activeItem?.label
@@ -64,8 +65,8 @@ export default function App() {
           {route.kind === 'page' ? (
             isCustomerDetail
               ? <CustomerDetailPage customerId={Number(route.path.split('/').at(-1))} onNavigate={navigate} />
-              : isReviewResult
-                ? <ReviewResultPage />
+              : isReviewResult || isReviewReport
+                ? <ReviewResultPage reviewId={isReviewReport ? Number(route.path.split('/').at(-1)) : undefined} onNavigate={navigate} />
               : isReviewDetails
                 ? <ReviewDetailsPage onNavigate={navigate} />
                 : route.path === '/reviews'

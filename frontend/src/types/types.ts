@@ -279,6 +279,49 @@ export interface ReviewSummaryRecord {
   scores?: Scores;
 }
 
+export interface ReviewRecord {
+  id: number;
+  customerId: number;
+  visitId: number | null;
+  transcript: Transcript;
+  metrics: Metrics;
+  scores: Scores;
+  aiResult: AiResult;
+  createdAt: string;
+}
+
+export interface NeedRecord {
+  id: number;
+  reviewId: number;
+  customerId: number;
+  level: 'L1' | 'L2' | 'L3' | null;
+  text: string | null;
+  quote: string | null;
+  timestampSec: number | null;
+  satisfied: boolean;
+}
+
+export interface TodoRecord {
+  id: number;
+  customerId: number;
+  reviewId: number | null;
+  text: string;
+  dueDate: string | null;
+  done: boolean;
+}
+
+export interface ReviewReportRecord {
+  review: ReviewRecord;
+  customer: CustomerRecord;
+  needs: NeedRecord[];
+  todos: TodoRecord[];
+  reviewCount: number;
+  stage: 'S1' | 'S2' | 'S3';
+  historicalAverage: number | null;
+  created?: boolean;
+  intent?: { applied: boolean; suggestion: { level: IntentLevel; score: number } } | null;
+}
+
 export interface ProductRecord {
   id: number;
   name: string;

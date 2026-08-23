@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { analyzeTranscript, createScript, getProducts, getReviews } from '../api/client.ts'
+import { analyzeTranscript, createScript, getProducts, getReviewReport, getReviews, submitReview } from '../api/client.ts'
 import { ErrorState, LoadingState } from '../components/PageStates.tsx'
 import { PROFILE_FIELDS } from '../config/scoring.ts'
-import { buildReviewAnalysis, type ReviewAnalysis } from '../lib/reviewAnalysis.ts'
+import { buildReviewAnalysis, METRIC_SOURCES, type ReviewAnalysis } from '../lib/reviewAnalysis.ts'
 import { loadCompletedDraft, loadReviewContext } from '../lib/reviewDraft.ts'
 import { savePreparedReviewResult } from '../lib/reviewResultStore.ts'
 import { formatTranscriptTime, presentMetrics, segmentMatchesEvidence, type MetricKey } from '../lib/metricPresentation.ts'
 import { buildHighlightScript, EMPTY_INSIGHT_TEXT, hasEvidenceItems } from '../lib/reviewInsights.ts'
 import { commitmentMeta, EMPTY_FOLLOWUP_TEXT, hasReviewItems } from '../lib/reviewFollowups.ts'
+import { evaluateMetricChecks } from '../lib/scoring.ts'
+import { determineIntent } from '../lib/intent.ts'
 import { metricEvidenceA } from '../samples/metricEvidence.ts'
 import { transcriptA } from '../samples/transcriptA.ts'
 import type { AiResult, Transcript } from '../types/types.ts'
@@ -15,7 +17,12 @@ import type { AiResult, Transcript } from '../types/types.ts'
 type ResultState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; analysis: ReviewAnalysis; aiResult: AiResult; average: number | null; source: 'mock' | 'dify' | 'fallback' }
+  | {
+    status: 'ready'; analysis: ReviewAnalysis; aiResult: AiResult; average: number | null
+    source: 'mock' | 'dify' | 'fallback' | 'saved'; transcript: Transcript
+    customerId: number; customerName: string | null; industry: string; scene: string
+    reviewId: number | null; stage: 'S1' | 'S2' | 'S3' | null; needCount: number; todoCount: number
+  }
 
 const dimensions = [
   { key: 'd1', label: 'D1 开场与信任建立' },
@@ -28,7 +35,7 @@ const isSampleA = (transcript: Transcript) => transcript.length === transcriptA.
   && transcript[0]?.start === transcriptA[0]?.start
   && transcript.at(-1)?.end === transcriptA.at(-1)?.end
 
-export default function ReviewResultPage() {
+export default function ReviewResultPage({ reviewId, onNavigate }: { reviewId?: number; onNavigate: (path: string) => void }) {
   const [requestKey, setRequestKey] = useState(0)
   const [state, setState] = useState<ResultState>({ status: 'loading' })
   const [selectedMetric, setSelectedMetric] = useState<MetricKey>('icebreak_duration')
@@ -38,9 +45,30 @@ export default function ReviewResultPage() {
   const [focusedEvidenceStart, setFocusedEvidenceStart] = useState<number | null>(null)
   const savingHighlightsRef = useRef(new Set<number>())
   const savedHighlightsRef = useRef(new Set<number>())
+  const [savingReview, setSavingReview] = useState(false)
+  const [reviewSaveError, setReviewSaveError] = useState('')
+  const savingReviewRef = useRef(false)
 
   const load = useCallback(() => {
     let active = true
+    if (reviewId) {
+      getReviewReport(reviewId).then((report) => {
+        if (!active) return
+        const analysis: ReviewAnalysis = {
+          metrics: report.review.metrics,
+          checks: evaluateMetricChecks(report.review.metrics),
+          scores: report.review.scores,
+          sources: METRIC_SOURCES,
+        }
+        setState({
+          status: 'ready', analysis, aiResult: report.review.aiResult, average: report.historicalAverage,
+          source: 'saved', transcript: report.review.transcript, customerId: report.customer.id,
+          customerName: report.customer.name, industry: report.customer.industry ?? '未标注行业', scene: '已落库复盘',
+          reviewId: report.review.id, stage: report.stage, needCount: report.needs.length, todoCount: report.todos.length,
+        })
+      }).catch(() => { if (active) setState({ status: 'error', message: '报告读取失败，请确认复盘 ID 存在并检查本地后端。' }) })
+      return () => { active = false }
+    }
     const draft = loadCompletedDraft(sessionStorage)
     const context = loadReviewContext(sessionStorage)
     if (!draft || !context) {
@@ -66,22 +94,23 @@ export default function ReviewResultPage() {
       const average = totals.length ? Math.round(totals.reduce((sum, total) => sum + total, 0) / totals.length * 10) / 10 : null
       const prepared = { aiResult: response.result, analysis, historicalAverage: average, source: response.source, analyzedAt: Date.now() }
       savePreparedReviewResult(sessionStorage, prepared)
-      setState({ status: 'ready', analysis, aiResult: response.result, average, source: response.source })
+      setState({
+        status: 'ready', analysis, aiResult: response.result, average, source: response.source,
+        transcript: draft.transcript, customerId: context.customerId, customerName: null,
+        industry: context.industry, scene: context.scene, reviewId: null, stage: null, needCount: 0, todoCount: 0,
+      })
     }).catch(() => { if (active) setState({ status: 'error', message: '分析暂时失败，请检查本地后端后重试。' }) })
     return () => { active = false }
-  }, [])
+  }, [reviewId])
 
   useEffect(load, [load, requestKey])
 
   if (state.status === 'loading') return <LoadingState message="正在分析样例 A 并计算四维评分…" />
   if (state.status === 'error') return <ErrorState title="复盘分析失败" message={state.message} onRetry={() => { setState({ status: 'loading' }); setRequestKey((key) => key + 1) }} />
 
-  const draft = loadCompletedDraft(sessionStorage)
-  const context = loadReviewContext(sessionStorage)
-  if (!draft || !context) return <ErrorState title="逐字稿已失效" message="请返回复盘入口重新准备样例 A。" onRetry={() => window.location.assign('/reviews')} />
-  const metrics = presentMetrics(state.analysis, draft.transcript)
+  const metrics = presentMetrics(state.analysis, state.transcript)
   const selected = metrics.find((metric) => metric.key === selectedMetric) ?? metrics[0]
-  const anchorStart = draft.transcript.find((segment) => segmentMatchesEvidence(segment.start, segment.end, selected.evidence))?.start
+  const anchorStart = state.transcript.find((segment) => segmentMatchesEvidence(segment.start, segment.end, selected.evidence))?.start
 
   const selectMetric = (key: MetricKey) => {
     setFocusedEvidenceStart(null)
@@ -101,7 +130,7 @@ export default function ReviewResultPage() {
     setSavingHighlight(index)
     setSaveError('')
     try {
-      await createScript(buildHighlightScript(state.aiResult.highlights[index], context))
+      await createScript(buildHighlightScript(state.aiResult.highlights[index], { scene: state.scene, industry: state.industry }, state.reviewId))
       savedHighlightsRef.current.add(index)
       setSavedHighlights(new Set(savedHighlightsRef.current))
     } catch {
@@ -112,9 +141,31 @@ export default function ReviewResultPage() {
     }
   }
 
+  const saveReview = async () => {
+    if (savingReviewRef.current || state.reviewId) return
+    savingReviewRef.current = true
+    setSavingReview(true)
+    setReviewSaveError('')
+    const priceQuestionCount = state.transcript.filter((segment) => segment.speaker === 'customer' && /(价格|价差|报价|优惠|分期|付款|多少钱)/.test(segment.text)).length
+    const suggestion = determineIntent({ priceQuestionCount })
+    try {
+      const report = await submitReview({
+        customerId: state.customerId, visitId: null, transcript: state.transcript,
+        metrics: state.analysis.metrics, scores: state.analysis.scores, aiResult: state.aiResult,
+        intentSuggestion: { level: suggestion.level, score: suggestion.score },
+      })
+      onNavigate(`/reviews/report/${report.review.id}`)
+    } catch {
+      setReviewSaveError('复盘保存失败，三张业务表均未写入，请检查后端后重试。')
+    } finally {
+      savingReviewRef.current = false
+      setSavingReview(false)
+    }
+  }
+
   return (
     <section aria-labelledby="page-title" className="mx-auto max-w-5xl">
-      <p className="text-sm font-bold tracking-[0.16em] text-emerald-700">复盘概览 · {state.source === 'mock' ? '本地 Mock' : state.source}</p>
+      <p className="text-sm font-bold tracking-[0.16em] text-emerald-700">复盘概览 · {state.source === 'mock' ? '本地 Mock' : state.source === 'saved' ? '已落库报告' : state.source}</p>
       <h1 id="page-title" className="mt-2 text-3xl font-black md:text-4xl">本次复盘得分</h1>
       {state.source === 'fallback' && <p role="alert" className="mt-4 rounded-xl bg-amber-50 p-4 text-sm font-semibold text-amber-900">AI 分析已使用完整默认结构，页面仍可查看代码计算结果。</p>}
       <div className="mt-6 rounded-[2rem] bg-slate-950 p-7 text-white md:p-9">
@@ -122,6 +173,8 @@ export default function ReviewResultPage() {
         <p className="mt-5 text-xs leading-5 text-slate-400">Demo 口径：当前数据模型没有销售 ID，历史平均暂按单一演示账号的全部 seed 复盘总分计算。</p>
       </div>
       <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{dimensions.map((dimension) => <article key={dimension.key} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-bold text-slate-500">{dimension.label}</p><p className="mt-3 text-4xl font-black text-emerald-700">{state.analysis.scores[dimension.key]}<span className="text-lg text-slate-400">/1</span></p></article>)}</div>
+      {reviewSaveError && <p role="alert" className="mt-5 rounded-xl bg-rose-50 p-4 text-sm font-semibold text-rose-800">{reviewSaveError}</p>}
+      {state.reviewId ? <div role="status" className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><p className="font-black text-emerald-900">报告 #{state.reviewId} 已保存 · {state.customerName} · {state.stage}</p><p className="mt-2 text-sm text-emerald-800">数据库已恢复 {state.needCount} 条需求和 {state.todoCount} 条待办；刷新当前 URL 仍可查看完整报告。</p></div> : <button type="button" disabled={savingReview} onClick={() => void saveReview()} className="mt-5 w-full rounded-2xl bg-emerald-700 px-6 py-4 text-base font-black text-white disabled:cursor-not-allowed disabled:bg-emerald-300">{savingReview ? '正在原子保存…' : '保存复盘报告'}</button>}
       <section aria-labelledby="evidence-title" className="mt-8">
         <div><p className="text-sm font-bold text-emerald-700">评分不是黑盒</p><h2 id="evidence-title" className="mt-1 text-2xl font-black">指标依据与原话回溯</h2></div>
         <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
@@ -137,7 +190,7 @@ export default function ReviewResultPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-5">
             <div className="border-b border-slate-200 pb-4"><p className="text-xs font-bold uppercase tracking-wide text-emerald-700">当前指标 · {selected.name}</p><p className="mt-2 text-sm text-slate-600">{selected.evidence.explanation}</p><p className="mt-1 text-xs text-slate-400">证据范围：{formatTranscriptTime(selected.evidence.start)}{selected.evidence.kind !== 'point' ? ` 至 ${formatTranscriptTime(selected.evidence.end)}` : ''}</p></div>
             <div className="mt-4 max-h-[70vh] space-y-2 overflow-y-auto pr-1" aria-label="逐字稿原话">
-              {draft.transcript.map((segment) => {
+              {state.transcript.map((segment) => {
                 const highlighted = segmentMatchesEvidence(segment.start, segment.end, selected.evidence)
                 const evidenceFocused = segment.start === focusedEvidenceStart
                 return <article data-transcript-start={segment.start} id={highlighted && segment.start === anchorStart ? `transcript-${selected.key}` : undefined} key={`${segment.start}-${segment.speaker}`} className={`scroll-mt-24 rounded-xl border p-3 ${highlighted || evidenceFocused ? 'border-amber-400 bg-amber-100 ring-2 ring-amber-200' : 'border-transparent bg-slate-50'}`}>
