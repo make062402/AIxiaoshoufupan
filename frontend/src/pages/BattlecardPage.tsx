@@ -99,9 +99,96 @@ export default function BattlecardPage({ customerId, onNavigate }: { customerId:
         )}
       </section>
 
-      <section aria-label="后续作战内容" className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-6 text-slate-500">
-        谈判五段式话术和产品推荐将在下一项 T44 接入；当前页面只验收客户信息与本次目标。
+      <section aria-labelledby="review-context-title" className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+        <p className="text-xs font-black tracking-[0.16em] text-emerald-700">03 · 上次复盘</p>
+        <h2 id="review-context-title" className="mt-2 text-2xl font-black">先接住上次没接住的事</h2>
+        {customer.stage === 'S1' ? (
+          <div className="mt-5"><EmptyState title="这是首次接触" message="目前没有历史复盘，本次先完成档案关键信息确认。" /></div>
+        ) : (
+          <div className="mt-6 grid gap-5 lg:grid-cols-2">
+            <ContextList title="未满足需求" empty="上次没有未满足需求" items={goals.unsatisfiedNeeds.map((need) => ({ key: `need-${need.id}`, badge: need.level ?? '待定', text: need.text ?? '需求内容待确认', detail: need.quote ? `客户原话：${need.quote}` : undefined }))} />
+            <ContextList title="改进与漏讲" empty="上次没有检出改进或漏讲" items={[
+              ...goals.improvements.map((item, index) => ({ key: `improvement-${index}`, badge: '改进', text: item.text, detail: item.quote ? `原话：${item.quote}` : undefined })),
+              ...goals.missedPoints.map((item, index) => ({ key: `missed-${index}`, badge: '漏讲/错讲', text: item.text, detail: item.quote ? `原话：${item.quote}` : undefined })),
+            ]} />
+            <div className="lg:col-span-2"><ContextList title="下次动作" empty="上次没有生成下一步动作" items={goals.nextActions.map((text, index) => ({ key: `action-${index}`, badge: `${index + 1}`, text }))} /></div>
+          </div>
+        )}
+      </section>
+
+      <section aria-labelledby="talk-title" className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+        <p className="text-xs font-black tracking-[0.16em] text-emerald-700">04 · 谈判五段式</p>
+        <h2 id="talk-title" className="mt-2 text-2xl font-black">照着场景开口，不临场硬编</h2>
+        <div className="mt-6 space-y-4">
+          {state.model.negotiation.stages.map((group, index) => (
+            <section key={group.stage} aria-labelledby={`talk-stage-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div className="flex items-center gap-3">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-900 text-xs font-black text-white">{index + 1}</span>
+                <h3 id={`talk-stage-${index}`} className="text-lg font-black">{group.stage}</h3>
+              </div>
+              {group.scripts.length === 0 ? <p className="mt-4 text-sm text-slate-500">当前阶段暂无可用话术</p> : (
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  {group.scripts.map((script) => (
+                    <article key={script.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                      <p className="text-xs font-black text-emerald-700">使用场景：{script.scene ?? '待补充'}</p>
+                      <p className="mt-3 text-sm font-semibold leading-7 text-slate-900">{script.text}</p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          ))}
+        </div>
+        {state.model.negotiation.invalidScripts.length > 0 && <p role="alert" className="mt-5 rounded-xl bg-rose-50 p-4 text-sm font-bold text-rose-900">检测到 {state.model.negotiation.invalidScripts.length} 条非五段式话术，请到话术库修正阶段。</p>}
+      </section>
+
+      <section aria-labelledby="products-title" className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+        <p className="text-xs font-black tracking-[0.16em] text-emerald-700">05 · 产品推荐</p>
+        <h2 id="products-title" className="mt-2 text-2xl font-black">本次只带这 2 个方案</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">优先承接上次未满足需求；不足两个时才用同行业低价方案补足。</p>
+        {state.model.recommendations.length === 0 ? <div className="mt-5"><EmptyState title="暂无同行业产品" message="请先在产品库补充该行业方案。" /></div> : (
+          <div className="mt-6 grid gap-5 lg:grid-cols-2" aria-label="推荐产品列表">
+            {state.model.recommendations.map((product, index) => (
+              <article key={product.id} data-product-id={product.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                <div className="border-b border-slate-200 bg-white p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div><p className="text-xs font-black text-emerald-700">推荐 {index + 1} · {product.source === 'matched' ? `${product.matchedLevel} 需求命中` : '低价补足'}</p><h3 className="mt-2 text-xl font-black">{product.name}</h3></div>
+                    <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1.5 text-sm font-black text-emerald-900">{formatPrice(product.price)}</span>
+                  </div>
+                </div>
+                <div className="space-y-5 p-5">
+                  <ProductSection title="关键参数">
+                    {product.params && Object.keys(product.params).length ? <dl className="grid gap-2 text-sm">{Object.entries(product.params).map(([key, value]) => <div key={key} className="flex justify-between gap-4 border-b border-slate-200 pb-2"><dt className="text-slate-500">{key}</dt><dd className="text-right font-bold">{value}</dd></div>)}</dl> : <p className="text-sm text-slate-500">待补充</p>}
+                  </ProductSection>
+                  <ProductSection title="本次必讲卖点">
+                    {product.sellingPoints.length ? <div className="space-y-3">{product.sellingPoints.map((point) => <article key={`${point.tag}-${point.script}`} className="rounded-xl bg-emerald-50 p-3"><p className="text-xs font-black text-emerald-700">{point.tag}</p><p className="mt-2 text-sm font-semibold leading-6 text-emerald-950">{point.script}</p></article>)}</div> : <p className="text-sm text-slate-500">暂无匹配卖点</p>}
+                  </ProductSection>
+                  <ProductSection title="常见异议与答法">
+                    {product.objections?.length ? <div className="space-y-3">{product.objections.map((item) => <article key={`${item.objection}-${item.answer}`} className="rounded-xl border border-amber-200 bg-amber-50 p-3"><p className="text-sm font-black text-amber-950">客户：{item.objection}</p><p className="mt-2 text-sm leading-6 text-amber-900">回应：{item.answer}</p></article>)}</div> : <p className="text-sm text-slate-500">暂无异议答法</p>}
+                  </ProductSection>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </section>
   )
+}
+
+function ContextList({ title, items, empty }: { title: string; items: Array<{ key: string; badge: string; text: string; detail?: string }>; empty: string }) {
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+      <h3 className="text-lg font-black">{title}</h3>
+      {items.length === 0 ? <p className="mt-3 text-sm text-slate-500">{empty}</p> : <ul className="mt-4 space-y-3">{items.map((item) => <li key={item.key} className="rounded-xl bg-white p-4"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-700">{item.badge}</span><p className="mt-3 text-sm font-bold leading-6">{item.text}</p>{item.detail && <p className="mt-2 text-xs leading-5 text-slate-500">{item.detail}</p>}</li>)}</ul>}
+    </section>
+  )
+}
+
+function ProductSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section><h4 className="mb-3 text-sm font-black text-slate-900">{title}</h4>{children}</section>
+}
+
+function formatPrice(price: number | null) {
+  return price === null ? '价格待确认' : `¥${new Intl.NumberFormat('zh-CN').format(price)}`
 }

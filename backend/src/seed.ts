@@ -2828,8 +2828,8 @@ function seed() {
       { stage: STAGE.confirm, scene: '客户说预算有限但不肯说具体数', text: '我不问您总数，就问一句：超过多少您就得再找人商量？我按那个数往下做，省得来回改。', fromReviewId: r3.id },
       { stage: STAGE.present, scene: '客户担心中途被增项加钱', text: '合同写死 12.8 万，除非您自己改方案，否则不多要一分钱；哪项超了，超出部分我们公司承担。', fromReviewId: r2.id },
       { stage: STAGE.present, scene: '客户在意工期且有硬性入住时间', text: '75 天写进合同，每拖一天按合同额千分之一赔给您，一百二十八块一天，从尾款直接扣，不用您催。', fromReviewId: r2.id },
-      { stage: STAGE.objection, scene: '客户怀疑环保只是嘴上说说', text: '完工我们出钱请第三方检测，不达标整改到达标，两次还不达标全额退款。您最担心的是板材还是胶？', fromReviewId: r6.id },
-      { stage: STAGE.objection, scene: '客户说别家便宜三万', text: '差价基本都在主材和隐蔽工程，我把两边清单逐项摆开给您看。您方便把那份报价拍给我吗？', fromReviewId: null },
+      { stage: STAGE.objection, scene: '客户怀疑环保只是嘴上说说', text: '完工我们出钱请第三方检测，不达标整改到达标，两次还不达标全额退款。您最担心的具体是哪些材料和环节？', fromReviewId: r6.id },
+      { stage: STAGE.objection, scene: '客户说别家便宜三万', text: '差价基本都在主材和隐蔽工程，我把两边清单逐项摆开给您看。您把那份报价里最想对清楚的几项说说？', fromReviewId: null },
       { stage: STAGE.lock, scene: '客户说「资料留下我再研究研究」', text: '资料我留下。这周三下午或者周六上午，您挑一个，我带样品上门量尺，量完当天出方案。', fromReviewId: r4.id },
     ])
     .returning()
