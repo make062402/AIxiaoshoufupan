@@ -72,6 +72,14 @@ export default function CustomerListPage({ onNavigate }: { onNavigate: (path: st
                 <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700">意向强度 {customer.intentScore}/3</span>
                 <span className="text-xs text-slate-400">已复盘 {customer.reviewCount} 次</span>
               </div>
+              <a
+                href={`/me/customers/${customer.id}`}
+                onClick={(event) => { event.preventDefault(); onNavigate(`/me/customers/${customer.id}`) }}
+                className="mt-5 inline-block rounded-lg text-sm font-bold text-emerald-700 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600"
+                aria-label={`查看${customer.name}的客户档案`}
+              >
+                查看客户档案 →
+              </a>
             </li>
           ))}
         </ul>

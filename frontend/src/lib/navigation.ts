@@ -24,6 +24,9 @@ export function resolveRoute(pathname: string): RouteSnapshot {
   if (effectivePath === '/me/customers') {
     return { kind: 'page', route: 'me', path: effectivePath }
   }
+  if (/^\/me\/customers\/[1-9]\d*$/.test(effectivePath)) {
+    return { kind: 'page', route: 'me', path: effectivePath }
+  }
   const item = NAV_ITEMS.find((candidate) => candidate.path === effectivePath)
   return item ? { kind: 'page', route: item.route, path: effectivePath } : { kind: 'not-found', path: cleanPath }
 }

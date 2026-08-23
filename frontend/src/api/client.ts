@@ -38,6 +38,17 @@ export function getCustomers(): Promise<CustomerRecord[]> {
   return api<CustomerRecord[]>('/customers')
 }
 
+export function getCustomer(id: number): Promise<CustomerRecord> {
+  return api<CustomerRecord>(`/customers?id=${id}`)
+}
+
+export function saveCustomer(customer: CustomerRecord): Promise<CustomerRecord> {
+  return api<CustomerRecord>('/customers', {
+    method: 'POST',
+    body: JSON.stringify(customer),
+  })
+}
+
 export function getReviews(): Promise<ReviewSummaryRecord[]> {
   return api<ReviewSummaryRecord[]>('/reviews')
 }

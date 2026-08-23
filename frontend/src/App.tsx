@@ -3,6 +3,7 @@ import { EmptyState, ErrorState, LoadingState } from './components/PageStates.ts
 import { loadTodoPreview, parseTodoPreviewScenario, type TodoPreviewItem } from './lib/demoPageState.ts'
 import { NAV_ITEMS, createNavigationStore, type AppRoute } from './lib/navigation.ts'
 import CustomerListPage from './pages/CustomerListPage.tsx'
+import CustomerDetailPage from './pages/CustomerDetailPage.tsx'
 
 const routeCopy: Record<AppRoute, { eyebrow: string; description: string }> = {
   todos: { eyebrow: '今天先做重要的事', description: '这里将汇总拜访安排和复盘产生的待办。' },
@@ -21,7 +22,10 @@ export default function App() {
   const activeItem = route.kind === 'page'
     ? NAV_ITEMS.find((item) => item.route === route.route)
     : undefined
-  const pageLabel = route.kind === 'page' && route.path === '/me/customers' ? '客户库' : activeItem?.label
+  const isCustomerDetail = route.kind === 'page' && /^\/me\/customers\/[1-9]\d*$/.test(route.path)
+  const pageLabel = route.kind === 'page' && route.path === '/me/customers'
+    ? '客户库'
+    : isCustomerDetail ? '客户档案' : activeItem?.label
 
   return (
     <div className="min-h-screen bg-[#f4f7f5] text-slate-950">
@@ -53,9 +57,11 @@ export default function App() {
 
         <main id="main-content" className="mx-auto max-w-6xl px-5 py-10 pb-28 md:px-10 md:py-14">
           {route.kind === 'page' ? (
-            route.path === '/me/customers'
-              ? <CustomerListPage onNavigate={navigate} />
-              : <PlaceholderPage route={route.route} label={activeItem?.label ?? ''} onNavigate={navigate} />
+            isCustomerDetail
+              ? <CustomerDetailPage customerId={Number(route.path.split('/').at(-1))} onNavigate={navigate} />
+              : route.path === '/me/customers'
+                ? <CustomerListPage onNavigate={navigate} />
+                : <PlaceholderPage route={route.route} label={activeItem?.label ?? ''} onNavigate={navigate} />
           ) : (
             <NotFound path={route.path} onNavigate={() => navigate('/todos')} />
           )}
