@@ -6,7 +6,7 @@ import CustomerListPage from './pages/CustomerListPage.tsx'
 import CustomerDetailPage from './pages/CustomerDetailPage.tsx'
 import ReviewIntakePage from './pages/ReviewIntakePage.tsx'
 import ReviewDetailsPage from './pages/ReviewDetailsPage.tsx'
-import ReviewResultPlaceholder from './pages/ReviewResultPlaceholder.tsx'
+import ReviewResultPage from './pages/ReviewResultPage.tsx'
 
 const routeCopy: Record<AppRoute, { eyebrow: string; description: string }> = {
   todos: { eyebrow: '今天先做重要的事', description: '这里将汇总拜访安排和复盘产生的待办。' },
@@ -65,7 +65,7 @@ export default function App() {
             isCustomerDetail
               ? <CustomerDetailPage customerId={Number(route.path.split('/').at(-1))} onNavigate={navigate} />
               : isReviewResult
-                ? <ReviewResultPlaceholder />
+                ? <ReviewResultPage />
               : isReviewDetails
                 ? <ReviewDetailsPage onNavigate={navigate} />
                 : route.path === '/reviews'

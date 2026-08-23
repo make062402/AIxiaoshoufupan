@@ -1,4 +1,4 @@
-import type { AiResult, CustomerRecord, IntentLevel, IntentLogRecord, ReviewSummaryRecord, SellingPoint, Transcript } from '../types/types.ts'
+import type { AiResult, CustomerRecord, IntentLevel, IntentLogRecord, ProductRecord, ReviewSummaryRecord, SellingPoint, Transcript } from '../types/types.ts'
 
 // 前端唯一的后端出口。后续所有请求都从这里走，便于统一加载态与错误处理（T30）。
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -69,4 +69,8 @@ export function applyAutomaticIntent(id: number, level: IntentLevel, score: numb
 
 export function getReviews(): Promise<ReviewSummaryRecord[]> {
   return api<ReviewSummaryRecord[]>('/reviews')
+}
+
+export function getProducts(): Promise<ProductRecord[]> {
+  return api<ProductRecord[]>('/products')
 }

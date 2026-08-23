@@ -276,6 +276,14 @@ export interface CustomerRecord {
 export interface ReviewSummaryRecord {
   id: number;
   customerId: number;
+  scores?: Scores;
+}
+
+export interface ProductRecord {
+  id: number;
+  name: string;
+  industry: string;
+  sellingPoints: SellingPoint[];
 }
 
 export interface IntentLogRecord {
