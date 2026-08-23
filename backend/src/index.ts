@@ -25,8 +25,8 @@ app.post('/api/analyze', async (c) => {
     return c.json({ ok: false, error: '请求体不是合法 JSON' }, 400)
   }
 
-  if (!Array.isArray(body?.transcript)) {
-    return c.json({ ok: false, error: 'transcript 必填，且必须是数组' }, 400)
+  if (!Array.isArray(body?.transcript) || body.transcript.length === 0) {
+    return c.json({ ok: false, error: 'transcript 必填，且必须是非空数组' }, 400)
   }
 
   const outcome = await analyzeTranscript({
