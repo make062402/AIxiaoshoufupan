@@ -68,11 +68,16 @@ interface TranscriptSegment {
 /** 源：types.ts Transcript */
 type Transcript = TranscriptSegment[]
 
-/** 源：types.ts SellingPoint */
+/**
+ * 源：types.ts SellingPoint
+ * match_keywords 是客户侧诉求词（需求↔卖点映射）；
+ * sales_keywords 是销售侧话术词（D3 卖点提及数）。两者说话人不同，不可混用。
+ */
 interface SellingPoint {
   tag: string
   script: string
   match_keywords: string[]
+  sales_keywords: string[]
 }
 
 /** 源：types.ts Metrics（D1 2 项 + D2 5 项 + D3 4 项 + D4 3 项 = 14 项） */
@@ -312,7 +317,10 @@ export const products = sqliteTable('products', {
   price: real('price'),
   /** 关键参数 JSON */
   params: text('params', { mode: 'json' }).$type<Record<string, string>>(),
-  /** 结构化卖点 JSON；卖点不得存为非结构化文本，match_keywords 是需求↔卖点映射的唯一依据 */
+  /**
+   * 结构化卖点 JSON；卖点不得存为非结构化文本。
+   * match_keywords 是需求↔卖点映射的唯一依据；sales_keywords 是卖点提及数的唯一依据。
+   */
   sellingPoints: text('selling_points', { mode: 'json' }).$type<SellingPoint[]>(),
   /** 常见异议与答法 JSON */
   objections: text('objections', { mode: 'json' })
