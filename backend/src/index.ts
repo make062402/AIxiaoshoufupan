@@ -3,6 +3,7 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { analyzeTranscript, isMockEnabled, type AnalyzeInput } from './dify.ts'
 import crud from './routes/crud.ts'
+import intent from './routes/intent.ts'
 
 const app = new Hono()
 
@@ -44,6 +45,7 @@ app.post('/api/analyze', async (c) => {
  * 必须挂在 /api/ping、/api/analyze 之后：Hono 按注册顺序匹配，
  * 先注册的专用接口优先，剩下的 /api/:table 才落到通用 CRUD。
  */
+app.route('/api', intent)
 app.route('/api', crud)
 
 const port = Number(process.env.PORT ?? 3000)

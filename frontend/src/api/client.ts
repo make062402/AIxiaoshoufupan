@@ -1,4 +1,4 @@
-import type { AiResult, CustomerRecord, ReviewSummaryRecord, SellingPoint, Transcript } from '../types/types.ts'
+import type { AiResult, CustomerRecord, IntentLevel, IntentLogRecord, ReviewSummaryRecord, SellingPoint, Transcript } from '../types/types.ts'
 
 // 前端唯一的后端出口。后续所有请求都从这里走，便于统一加载态与错误处理（T30）。
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -46,6 +46,20 @@ export function saveCustomer(customer: CustomerRecord): Promise<CustomerRecord> 
   return api<CustomerRecord>('/customers', {
     method: 'POST',
     body: JSON.stringify(customer),
+  })
+}
+
+export function overrideCustomerIntent(id: number, level: IntentLevel, score: number, operator: string): Promise<{ customer: CustomerRecord; log: IntentLogRecord }> {
+  return api(`/customers/${id}/intent/manual`, {
+    method: 'POST',
+    body: JSON.stringify({ level, score, operator }),
+  })
+}
+
+export function applyAutomaticIntent(id: number, level: IntentLevel, score: number): Promise<{ applied: boolean; suggestion: { level: IntentLevel; score: number }; customer: CustomerRecord }> {
+  return api(`/customers/${id}/intent/auto`, {
+    method: 'POST',
+    body: JSON.stringify({ level, score }),
   })
 }
 

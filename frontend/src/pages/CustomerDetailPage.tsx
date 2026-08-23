@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { getCustomer, getReviews, saveCustomer } from '../api/client.ts'
+import { getCustomer, getReviews, overrideCustomerIntent, saveCustomer } from '../api/client.ts'
 import { ErrorState, LoadingState } from '../components/PageStates.tsx'
 import { deriveCustomerStage } from '../lib/customerList.ts'
 import {
@@ -9,7 +9,7 @@ import {
   validateProfileForm,
   type CustomerProfileForm,
 } from '../lib/customerProfile.ts'
-import type { CustomerRecord } from '../types/types.ts'
+import type { CustomerRecord, IntentLevel } from '../types/types.ts'
 
 type DetailState =
   | { status: 'loading' }
@@ -22,17 +22,21 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [saved, setSaved] = useState(false)
+  const [intentLevel, setIntentLevel] = useState<IntentLevel>('C')
+  const [intentScore, setIntentScore] = useState(0)
+  const [operator, setOperator] = useState('当前销售')
+  const [intentSaving, setIntentSaving] = useState(false)
+  const [intentMessage, setIntentMessage] = useState('')
 
   const load = useCallback(() => {
     let active = true
     Promise.all([getCustomer(customerId), getReviews()])
       .then(([customer, reviews]) => {
-        if (active) setState({
-          status: 'ready',
-          customer,
-          form: customerToProfileForm(customer),
-          reviewCount: reviews.filter((review) => review.customerId === customerId).length,
-        })
+        if (active) {
+          setState({ status: 'ready', customer, form: customerToProfileForm(customer), reviewCount: reviews.filter((review) => review.customerId === customerId).length })
+          setIntentLevel(customer.intentLevel ?? 'C')
+          setIntentScore(customer.intentLevel === 'B' ? Math.max(1, customer.intentScore ?? 1) : 0)
+        }
       })
       .catch(() => { if (active) setState({ status: 'error' }) })
     return () => { active = false }
@@ -68,6 +72,21 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
       setSaveError('保存失败，请检查后端服务后再试。')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function saveIntentOverride() {
+    if (state.status !== 'ready' || !operator.trim()) return
+    setIntentSaving(true)
+    setIntentMessage('')
+    try {
+      const result = await overrideCustomerIntent(state.customer.id, intentLevel, intentLevel === 'B' ? intentScore : 0, operator.trim())
+      setState((current) => current.status === 'ready' ? { ...current, customer: result.customer } : current)
+      setIntentMessage(`已由${result.log.operator}把意向从 ${result.log.fromLevel} 调整为 ${result.log.toLevel}，并完成留痕。`)
+    } catch {
+      setIntentMessage('意向调整失败，客户级别和留痕均未改变。')
+    } finally {
+      setIntentSaving(false)
     }
   }
 
@@ -110,6 +129,33 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
           {saving ? '保存中…' : '保存客户档案'}
         </button>
       </form>
+
+      <section aria-labelledby="intent-title" className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold tracking-[0.14em] text-emerald-700">人工覆盖</p>
+            <h2 id="intent-title" className="mt-2 text-xl font-black">意向分级</h2>
+            <p className="mt-2 text-sm text-slate-500">当前实际级别：{state.customer.intentLevel ?? 'C'} · 强度 {state.customer.intentScore ?? 0}/3{state.customer.intentManual ? ' · 已人工锁定' : ''}</p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <label className="text-sm font-semibold text-slate-700">意向级别
+            <select value={intentLevel} onChange={(event) => { const level = event.target.value as IntentLevel; setIntentLevel(level); setIntentScore(level === 'B' ? Math.max(1, intentScore) : 0); setIntentMessage('') }} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <option value="A">A 已成单</option><option value="B">B 中意向</option><option value="C">C 低意向</option><option value="D">D 无意向</option>
+            </select>
+          </label>
+          <label className="text-sm font-semibold text-slate-700">意向强度
+            <select value={intentScore} disabled={intentLevel !== 'B'} onChange={(event) => setIntentScore(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 disabled:opacity-50">
+              {intentLevel === 'B' ? <><option value={1}>1 功能细节</option><option value={2}>2 价格</option><option value={3}>3 决策推进</option></> : <option value={0}>0</option>}
+            </select>
+          </label>
+          <Field label="操作人" value={operator} onChange={(value) => { setOperator(value); setIntentMessage('') }} required />
+        </div>
+        {intentMessage && <p role="status" className={`mt-4 rounded-xl px-4 py-3 text-sm font-semibold ${intentMessage.includes('失败') ? 'bg-rose-50 text-rose-800' : 'bg-emerald-50 text-emerald-800'}`}>{intentMessage}</p>}
+        <button type="button" onClick={saveIntentOverride} disabled={intentSaving || !operator.trim()} className="mt-5 rounded-xl bg-slate-900 px-5 py-3 text-sm font-black text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">
+          {intentSaving ? '保存意向中…' : '确认人工调整'}
+        </button>
+      </section>
     </section>
   )
 }

@@ -277,3 +277,12 @@ export interface ReviewSummaryRecord {
   id: number;
   customerId: number;
 }
+
+export interface IntentLogRecord {
+  id: number;
+  customerId: number;
+  fromLevel: string;
+  toLevel: string;
+  operator: string;
+  createdAt: string;
+}
