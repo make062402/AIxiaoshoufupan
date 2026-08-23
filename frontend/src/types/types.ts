@@ -248,3 +248,32 @@ export interface AiResult {
   /** 下次见面三件事 */
   next_actions: string[];
 }
+
+/* ============================================================
+ * 六、通用 CRUD 页面记录
+ * ============================================================ */
+
+export type IntentLevel = 'A' | 'B' | 'C' | 'D';
+
+export interface CustomerRecord {
+  id: number;
+  name: string;
+  identity: string | null;
+  phone: string | null;
+  role: string | null;
+  budget: string | null;
+  coreNeed: string | null;
+  priorityOrder: string[] | null;
+  notes: string | null;
+  deadline: string | null;
+  industry: string | null;
+  intentLevel: IntentLevel | null;
+  intentScore: number | null;
+  intentManual: boolean;
+  createdAt: string;
+}
+
+export interface ReviewSummaryRecord {
+  id: number;
+  customerId: number;
+}

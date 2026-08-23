@@ -21,6 +21,9 @@ export interface NavigationEnvironment {
 export function resolveRoute(pathname: string): RouteSnapshot {
   const cleanPath = pathname !== '/' && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname
   const effectivePath = cleanPath === '/' ? '/todos' : cleanPath
+  if (effectivePath === '/me/customers') {
+    return { kind: 'page', route: 'me', path: effectivePath }
+  }
   const item = NAV_ITEMS.find((candidate) => candidate.path === effectivePath)
   return item ? { kind: 'page', route: item.route, path: effectivePath } : { kind: 'not-found', path: cleanPath }
 }

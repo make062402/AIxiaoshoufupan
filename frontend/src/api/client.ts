@@ -1,4 +1,4 @@
-import type { AiResult, SellingPoint, Transcript } from '../types/types.ts'
+import type { AiResult, CustomerRecord, ReviewSummaryRecord, SellingPoint, Transcript } from '../types/types.ts'
 
 // 前端唯一的后端出口。后续所有请求都从这里走，便于统一加载态与错误处理（T30）。
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -32,4 +32,12 @@ export function analyzeTranscript(
     method: 'POST',
     body: JSON.stringify(input),
   })
+}
+
+export function getCustomers(): Promise<CustomerRecord[]> {
+  return api<CustomerRecord[]>('/customers')
+}
+
+export function getReviews(): Promise<ReviewSummaryRecord[]> {
+  return api<ReviewSummaryRecord[]>('/reviews')
 }

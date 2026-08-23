@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { EmptyState, ErrorState, LoadingState } from './components/PageStates.tsx'
 import { loadTodoPreview, parseTodoPreviewScenario, type TodoPreviewItem } from './lib/demoPageState.ts'
 import { NAV_ITEMS, createNavigationStore, type AppRoute } from './lib/navigation.ts'
+import CustomerListPage from './pages/CustomerListPage.tsx'
 
 const routeCopy: Record<AppRoute, { eyebrow: string; description: string }> = {
   todos: { eyebrow: '今天先做重要的事', description: '这里将汇总拜访安排和复盘产生的待办。' },
@@ -20,6 +21,7 @@ export default function App() {
   const activeItem = route.kind === 'page'
     ? NAV_ITEMS.find((item) => item.route === route.route)
     : undefined
+  const pageLabel = route.kind === 'page' && route.path === '/me/customers' ? '客户库' : activeItem?.label
 
   return (
     <div className="min-h-screen bg-[#f4f7f5] text-slate-950">
@@ -43,7 +45,7 @@ export default function App() {
             <div className="md:hidden"><Brand onNavigate={() => navigate('/todos')} compact /></div>
             <div className="hidden md:block">
               <p className="text-sm font-medium text-slate-500">工作台</p>
-              <p className="mt-1 text-lg font-semibold">{activeItem?.label ?? '页面未找到'}</p>
+              <p className="mt-1 text-lg font-semibold">{pageLabel ?? '页面未找到'}</p>
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">Mock 模式</span>
           </div>
@@ -51,7 +53,9 @@ export default function App() {
 
         <main id="main-content" className="mx-auto max-w-6xl px-5 py-10 pb-28 md:px-10 md:py-14">
           {route.kind === 'page' ? (
-            <PlaceholderPage route={route.route} label={activeItem?.label ?? ''} />
+            route.path === '/me/customers'
+              ? <CustomerListPage onNavigate={navigate} />
+              : <PlaceholderPage route={route.route} label={activeItem?.label ?? ''} onNavigate={navigate} />
           ) : (
             <NotFound path={route.path} onNavigate={() => navigate('/todos')} />
           )}
@@ -95,7 +99,7 @@ function NavLink({ item, active, onNavigate, compact = false }: { item: (typeof 
   )
 }
 
-function PlaceholderPage({ route, label }: { route: AppRoute; label: string }) {
+function PlaceholderPage({ route, label, onNavigate }: { route: AppRoute; label: string; onNavigate: (path: string) => void }) {
   const copy = routeCopy[route]
   return (
     <section aria-labelledby="page-title" className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
@@ -105,7 +109,7 @@ function PlaceholderPage({ route, label }: { route: AppRoute; label: string }) {
         <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">{copy.description}</p>
       </div>
       <div className="px-6 py-8 md:px-12">
-        {route === 'todos' ? <TodoPreview /> : (
+        {route === 'todos' ? <TodoPreview /> : route === 'me' ? <MeHome onNavigate={onNavigate} /> : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
             <p className="font-semibold text-slate-700">页面骨架已就绪</p>
             <p className="mt-2 text-sm text-slate-500">业务内容将在对应任务中逐步接入。</p>
@@ -113,6 +117,27 @@ function PlaceholderPage({ route, label }: { route: AppRoute; label: string }) {
         )}
       </div>
     </section>
+  )
+}
+
+function MeHome({ onNavigate }: { onNavigate: (path: string) => void }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <a
+        href="/me/customers"
+        onClick={(event) => { event.preventDefault(); onNavigate('/me/customers') }}
+        className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600"
+      >
+        <span className="text-xs font-bold tracking-[0.14em] text-emerald-700">客户资产</span>
+        <h2 className="mt-2 text-xl font-bold">客户库</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">查看客户意向和跟进阶段</p>
+        <span className="mt-5 inline-block text-sm font-bold text-emerald-700 group-hover:translate-x-1">进入客户库 →</span>
+      </a>
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-slate-500">
+        <p className="font-semibold text-slate-700">更多个人资产</p>
+        <p className="mt-2 text-sm leading-6">话术库、产品库和配置将在后续任务接入。</p>
+      </div>
+    </div>
   )
 }
 
