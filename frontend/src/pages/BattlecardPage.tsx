@@ -49,7 +49,27 @@ export default function BattlecardPage({ customerId, onNavigate }: { customerId:
         </div>
       </header>
 
-      <section aria-labelledby="customer-info-title" className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+      <nav aria-label="页内目录" className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-black text-slate-700">快速跳转</h2>
+          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="rounded-lg text-sm font-bold text-emerald-700 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">↑ 回到顶部</button>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            { id: 'customer-info-title', label: '01 客户信息' },
+            { id: 'goals-title', label: '02 本次目标' },
+            { id: 'review-context-title', label: '03 上次复盘' },
+            { id: 'talk-title', label: '04 谈判五段式' },
+            { id: 'products-title', label: '05 产品推荐' },
+          ].map((section) => (
+            <button key={section.id} type="button" onClick={() => document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+              {section.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <section aria-labelledby="customer-info-title" className="mt-6 scroll-mt-28 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
         <div>
           <p className="text-xs font-black tracking-[0.16em] text-emerald-700">01 · 客户信息</p>
           <h2 id="customer-info-title" className="mt-2 text-2xl font-black">进门前，先把这个人想清楚</h2>
@@ -80,7 +100,7 @@ export default function BattlecardPage({ customerId, onNavigate }: { customerId:
         </aside>
       </section>
 
-      <section aria-labelledby="goals-title" className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+      <section aria-labelledby="goals-title" className="mt-6 scroll-mt-28 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
         <p className="text-xs font-black tracking-[0.16em] text-emerald-700">02 · 本次目标</p>
         <h2 id="goals-title" className="mt-2 text-2xl font-black">这次必须拿回的 3 件信息</h2>
         <p className="mt-2 text-sm leading-6 text-slate-500">从客户当前缺失档案中按业务优先级自动选出，不靠临场记忆。</p>
@@ -99,7 +119,7 @@ export default function BattlecardPage({ customerId, onNavigate }: { customerId:
         )}
       </section>
 
-      <section aria-labelledby="review-context-title" className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+      <section aria-labelledby="review-context-title" className="mt-6 scroll-mt-28 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
         <p className="text-xs font-black tracking-[0.16em] text-emerald-700">03 · 上次复盘</p>
         <h2 id="review-context-title" className="mt-2 text-2xl font-black">先接住上次没接住的事</h2>
         {customer.stage === 'S1' ? (
@@ -116,7 +136,7 @@ export default function BattlecardPage({ customerId, onNavigate }: { customerId:
         )}
       </section>
 
-      <section aria-labelledby="talk-title" className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+      <section aria-labelledby="talk-title" className="mt-6 scroll-mt-28 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
         <p className="text-xs font-black tracking-[0.16em] text-emerald-700">04 · 谈判五段式</p>
         <h2 id="talk-title" className="mt-2 text-2xl font-black">照着场景开口，不临场硬编</h2>
         <div className="mt-6 space-y-4">
@@ -142,7 +162,7 @@ export default function BattlecardPage({ customerId, onNavigate }: { customerId:
         {state.model.negotiation.invalidScripts.length > 0 && <p role="alert" className="mt-5 rounded-xl bg-rose-50 p-4 text-sm font-bold text-rose-900">检测到 {state.model.negotiation.invalidScripts.length} 条非五段式话术，请到话术库修正阶段。</p>}
       </section>
 
-      <section aria-labelledby="products-title" className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+      <section aria-labelledby="products-title" className="mt-6 scroll-mt-28 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
         <p className="text-xs font-black tracking-[0.16em] text-emerald-700">05 · 产品推荐</p>
         <h2 id="products-title" className="mt-2 text-2xl font-black">本次只带这 2 个方案</h2>
         <p className="mt-2 text-sm leading-6 text-slate-500">优先承接上次未满足需求；不足两个时才用同行业低价方案补足。</p>

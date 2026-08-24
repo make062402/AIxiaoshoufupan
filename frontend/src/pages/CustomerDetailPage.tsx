@@ -111,20 +111,37 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
         </div>
       </div>
 
+      <nav aria-label="页内目录" className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-black text-slate-700">快速跳转</h2>
+          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="rounded-lg text-sm font-bold text-emerald-700 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">↑ 回到顶部</button>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((number) => (
+            <button key={number} type="button" onClick={() => document.getElementById(`profile-${number}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+              {number}. {profileLabels[number]}
+            </button>
+          ))}
+          <button type="button" onClick={() => document.getElementById('intent-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+            人工意向
+          </button>
+        </div>
+      </nav>
+
       <form onSubmit={submit} className="space-y-4" noValidate>
-        <ProfileGroup number={1} label="称呼与身份" pending={!statuses[0].filled}>
+        <ProfileGroup id="profile-1" number={1} label="称呼与身份" pending={!statuses[0].filled}>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="客户称呼" value={state.form.name} onChange={(value) => updateField('name', value)} error={errors.name} required />
             <Field label="身份" value={state.form.identity} onChange={(value) => updateField('identity', value)} />
           </div>
         </ProfileGroup>
-        <ProfileGroup number={2} label="联系方式" pending={!statuses[1].filled}><Field label="电话或微信" value={state.form.phone} onChange={(value) => updateField('phone', value)} /></ProfileGroup>
-        <ProfileGroup number={3} label="在采购中的角色" pending={!statuses[2].filled}><Field label="使用者 / 影响者 / 拍板人" value={state.form.role} onChange={(value) => updateField('role', value)} /></ProfileGroup>
-        <ProfileGroup number={4} label="预算区间" pending={!statuses[3].filled}><Field label="客户预算" value={state.form.budget} onChange={(value) => updateField('budget', value)} /></ProfileGroup>
-        <ProfileGroup number={5} label="核心需求与购买意向" pending={!statuses[4].filled}><Field label="核心需求" value={state.form.coreNeed} onChange={(value) => updateField('coreNeed', value)} multiline /></ProfileGroup>
-        <ProfileGroup number={6} label="关注维度优先级排序" pending={!statuses[5].filled}><Field label="按顺序填写价格、质量、服务、周期" value={state.form.priorityOrderText} onChange={(value) => updateField('priorityOrderText', value)} error={errors.priorityOrderText} /></ProfileGroup>
-        <ProfileGroup number={7} label="注意事项" pending={!statuses[6].filled}><Field label="沟通偏好、风险点或忌讳" value={state.form.notes} onChange={(value) => updateField('notes', value)} multiline /></ProfileGroup>
-        <ProfileGroup number={8} label="采购时间点 / 交付期限" pending={!statuses[7].filled}><Field label="客户原话时间点" value={state.form.deadline} onChange={(value) => updateField('deadline', value)} /></ProfileGroup>
+        <ProfileGroup id="profile-2" number={2} label="联系方式" pending={!statuses[1].filled}><Field label="电话或微信" value={state.form.phone} onChange={(value) => updateField('phone', value)} /></ProfileGroup>
+        <ProfileGroup id="profile-3" number={3} label="在采购中的角色" pending={!statuses[2].filled}><Field label="使用者 / 影响者 / 拍板人" value={state.form.role} onChange={(value) => updateField('role', value)} /></ProfileGroup>
+        <ProfileGroup id="profile-4" number={4} label="预算区间" pending={!statuses[3].filled}><Field label="客户预算" value={state.form.budget} onChange={(value) => updateField('budget', value)} /></ProfileGroup>
+        <ProfileGroup id="profile-5" number={5} label="核心需求与购买意向" pending={!statuses[4].filled}><Field label="核心需求" value={state.form.coreNeed} onChange={(value) => updateField('coreNeed', value)} multiline /></ProfileGroup>
+        <ProfileGroup id="profile-6" number={6} label="关注维度优先级排序" pending={!statuses[5].filled}><Field label="按顺序填写价格、质量、服务、周期" value={state.form.priorityOrderText} onChange={(value) => updateField('priorityOrderText', value)} error={errors.priorityOrderText} /></ProfileGroup>
+        <ProfileGroup id="profile-7" number={7} label="注意事项" pending={!statuses[6].filled}><Field label="沟通偏好、风险点或忌讳" value={state.form.notes} onChange={(value) => updateField('notes', value)} multiline /></ProfileGroup>
+        <ProfileGroup id="profile-8" number={8} label="采购时间点 / 交付期限" pending={!statuses[7].filled}><Field label="客户原话时间点" value={state.form.deadline} onChange={(value) => updateField('deadline', value)} /></ProfileGroup>
 
         {saveError && <p role="alert" className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">{saveError}</p>}
         {saved && <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">已保存，刷新页面仍可看到最新档案。</p>}
@@ -133,7 +150,7 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
         </button>
       </form>
 
-      <section aria-labelledby="intent-title" className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section aria-labelledby="intent-title" id="intent-section" className="mt-6 scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-bold tracking-[0.14em] text-emerald-700">人工覆盖</p>
@@ -163,9 +180,20 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
   )
 }
 
-function ProfileGroup({ number, label, pending, children }: { number: number; label: string; pending: boolean; children: React.ReactNode }) {
+const profileLabels: Record<number, string> = {
+  1: '称呼与身份',
+  2: '联系方式',
+  3: '在采购中的角色',
+  4: '预算区间',
+  5: '核心需求',
+  6: '优先级排序',
+  7: '注意事项',
+  8: '时间点 / 期限',
+}
+
+function ProfileGroup({ id, number, label, pending, children }: { id: string; number: number; label: string; pending: boolean; children: React.ReactNode }) {
   return (
-    <fieldset className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <fieldset id={id} className="scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <legend className="sr-only">第 {number} 项：{label}</legend>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="font-black"><span className="mr-2 text-emerald-700">{number}.</span>{label}</h2>

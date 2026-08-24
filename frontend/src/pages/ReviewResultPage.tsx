@@ -175,7 +175,24 @@ export default function ReviewResultPage({ reviewId, onNavigate }: { reviewId?: 
       <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{dimensions.map((dimension) => <article key={dimension.key} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-bold text-slate-500">{dimension.label}</p><p className="mt-3 text-4xl font-black text-emerald-700">{state.analysis.scores[dimension.key]}<span className="text-lg text-slate-400">/1</span></p></article>)}</div>
       {reviewSaveError && <p role="alert" className="mt-5 rounded-xl bg-rose-50 p-4 text-sm font-semibold text-rose-800">{reviewSaveError}</p>}
       {state.reviewId ? <div role="status" className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><p className="font-black text-emerald-900">报告 #{state.reviewId} 已保存 · {state.customerName} · {state.stage}</p><p className="mt-2 text-sm text-emerald-800">数据库已恢复 {state.needCount} 条需求和 {state.todoCount} 条待办；刷新当前 URL 仍可查看完整报告。</p></div> : <button type="button" disabled={savingReview} onClick={() => void saveReview()} className="mt-5 w-full rounded-2xl bg-emerald-700 px-6 py-4 text-base font-black text-white disabled:cursor-not-allowed disabled:bg-emerald-300">{savingReview ? '正在原子保存…' : '保存复盘报告'}</button>}
-      <section aria-labelledby="evidence-title" className="mt-8">
+      <nav aria-label="页内目录" className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-black text-slate-700">快速跳转</h2>
+          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="rounded-lg text-sm font-bold text-emerald-700 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">↑ 回到顶部</button>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            { id: 'evidence-section', label: '指标依据与回溯' },
+            { id: 'insights-section', label: '亮点与改进点' },
+            { id: 'followup-section', label: '漏讲、承诺与待办' },
+          ].map((section) => (
+            <button key={section.id} type="button" onClick={() => document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+              {section.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+      <section aria-labelledby="evidence-title" id="evidence-section" className="mt-8 scroll-mt-28">
         <div><p className="text-sm font-bold text-emerald-700">评分不是黑盒</p><h2 id="evidence-title" className="mt-1 text-2xl font-black">指标依据与原话回溯</h2></div>
         <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
           <div className="space-y-4">
@@ -202,7 +219,7 @@ export default function ReviewResultPage({ reviewId, onNavigate }: { reviewId?: 
           </div>
         </div>
       </section>
-      <section aria-labelledby="insights-title" className="mt-8">
+      <section aria-labelledby="insights-title" id="insights-section" className="mt-8 scroll-mt-28">
         <p className="text-sm font-bold text-emerald-700">把有效经验留下来</p><h2 id="insights-title" className="mt-1 text-2xl font-black">亮点与改进点</h2>
         {saveError && <p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-800">{saveError}</p>}
         <div className="mt-5 grid gap-5 md:grid-cols-2">
@@ -214,7 +231,7 @@ export default function ReviewResultPage({ reviewId, onNavigate }: { reviewId?: 
           </div>
         </div>
       </section>
-      <section aria-labelledby="followup-title" className="mt-8">
+      <section aria-labelledby="followup-title" id="followup-section" className="mt-8 scroll-mt-28">
         <p className="text-sm font-bold text-emerald-700">把风险和行动说清楚</p><h2 id="followup-title" className="mt-1 text-2xl font-black">漏讲错讲、承诺与待办</h2>
         <div className="mt-5 grid gap-5 lg:grid-cols-3">
           <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-5"><h3 className="text-lg font-black text-rose-950">漏讲错讲</h3>
