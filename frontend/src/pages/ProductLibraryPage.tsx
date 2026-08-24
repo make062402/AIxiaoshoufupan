@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getProducts } from '../api/client.ts'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageStates.tsx'
+import SearchBox from '../components/SearchBox.tsx'
 import type { ProductRecord } from '../types/types.ts'
 
 type State = { status: 'loading' } | { status: 'error' } | { status: 'ready'; products: ProductRecord[] }
@@ -8,6 +9,7 @@ type State = { status: 'loading' } | { status: 'error' } | { status: 'ready'; pr
 export default function ProductLibraryPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const [requestKey, setRequestKey] = useState(0)
   const [state, setState] = useState<State>({ status: 'loading' })
+  const [query, setQuery] = useState('')
   const load = useCallback(() => {
     let active = true
     getProducts()
@@ -16,6 +18,18 @@ export default function ProductLibraryPage({ onNavigate }: { onNavigate: (path: 
     return () => { active = false }
   }, [])
   useEffect(load, [load, requestKey])
+
+  const keyword = query.trim().toLowerCase()
+  const filtered = useMemo(() => {
+    if (state.status !== 'ready' || keyword === '') return state.status === 'ready' ? state.products : []
+    return state.products.filter((product) => {
+      const paramsText = Object.entries(product.params ?? {}).map(([key, value]) => `${key} ${value}`).join(' ')
+      const sellingText = product.sellingPoints.map((point) => `${point.tag} ${point.script}`).join(' ')
+      const objectionsText = (product.objections ?? []).map((item) => `${item.objection} ${item.answer}`).join(' ')
+      const haystack = [product.name, product.industry, paramsText, sellingText, objectionsText].filter((value) => Boolean(value)).join(' ').toLowerCase()
+      return haystack.includes(keyword)
+    })
+  }, [state, keyword])
 
   if (state.status === 'loading') return <LoadingState message="正在加载产品库…" />
   if (state.status === 'error') {
@@ -27,12 +41,25 @@ export default function ProductLibraryPage({ onNavigate }: { onNavigate: (path: 
       <button onClick={() => onNavigate('/me')} className="text-sm font-bold text-emerald-700 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">← 返回我的</button>
       <div className="mb-7 mt-5 flex flex-wrap items-end justify-between gap-4">
         <div><p className="text-sm font-bold tracking-[0.16em] text-emerald-700">产品资产</p><h1 id="page-title" className="mt-2 text-3xl font-black md:text-4xl">产品库</h1></div>
-        <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">共 {state.products.length} 个</span>
+        <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">{keyword === '' ? `共 ${state.products.length} 个` : `找到 ${filtered.length} 个`}</span>
       </div>
-      {state.products.length === 0 ? <EmptyState title="还没有产品" message="导入产品后会出现在这里。" /> : (
+      <div className="mb-6">
+        <SearchBox value={query} onChange={setQuery} placeholder="搜索名称、行业、参数或卖点" ariaLabel="搜索产品" inputId="product-search-input" />
+      </div>
+      {state.products.length === 0 ? <EmptyState title="还没有产品" message="导入产品后会出现在这里。" /> : filtered.length === 0 ? (
+        <div>
+          <EmptyState title="没有匹配的产品" message={`没有找到符合「${query.trim()}」的产品，换个关键词试试。`} />
+          <button type="button" onClick={() => setQuery('')} className="mx-auto mt-4 block rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">清空搜索</button>
+        </div>
+      ) : (
         <ul aria-label="产品列表" className="grid gap-5 lg:grid-cols-2">
-          {state.products.map((product) => <ProductCard key={product.id} product={product} />)}
+          {filtered.map((product) => <ProductCard key={product.id} product={product} />)}
         </ul>
+      )}
+      {filtered.length > 0 && (
+        <div className="mt-8 flex justify-center">
+          <button type="button" onClick={() => document.getElementById('product-search-input')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">↑ 回到搜索</button>
+        </div>
       )}
     </section>
   )

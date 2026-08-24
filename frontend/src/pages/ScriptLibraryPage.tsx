@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getScripts } from '../api/client.ts'
-import { ErrorState, LoadingState } from '../components/PageStates.tsx'
+import { EmptyState, ErrorState, LoadingState } from '../components/PageStates.tsx'
+import SearchBox from '../components/SearchBox.tsx'
 import { groupScripts, invalidScripts } from '../lib/myAssets.ts'
 import type { ScriptRecord } from '../types/types.ts'
 
@@ -9,6 +10,7 @@ type State = { status: 'loading' } | { status: 'error' } | { status: 'ready'; sc
 export default function ScriptLibraryPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const [requestKey, setRequestKey] = useState(0)
   const [state, setState] = useState<State>({ status: 'loading' })
+  const [query, setQuery] = useState('')
   const load = useCallback(() => {
     let active = true
     getScripts()
@@ -18,16 +20,32 @@ export default function ScriptLibraryPage({ onNavigate }: { onNavigate: (path: s
   }, [])
   useEffect(load, [load, requestKey])
 
+  const keyword = query.trim().toLowerCase()
+  const filtered = useMemo(() => {
+    if (state.status !== 'ready' || keyword === '') return state.status === 'ready' ? state.scripts : []
+    return state.scripts.filter((script) => [script.text, script.scene, script.stage].filter((value): value is string => Boolean(value)).join(' ').toLowerCase().includes(keyword))
+  }, [state, keyword])
+
   if (state.status === 'loading') return <LoadingState message="正在加载话术库…" />
   if (state.status === 'error') {
     return <ErrorState title="话术库加载失败" message="暂时无法取得话术，请稍后重试。" onRetry={() => { setState({ status: 'loading' }); setRequestKey((key) => key + 1) }} />
   }
 
-  const invalid = invalidScripts(state.scripts)
+  const invalid = invalidScripts(filtered)
+  const groupCount = filtered.length
   return (
-    <AssetPage title="话术库" eyebrow="个人销售资产" count={`共 ${state.scripts.length} 条`} onBack={() => onNavigate('/me')}>
+    <AssetPage title="话术库" eyebrow="个人销售资产" count={keyword === '' ? `共 ${state.scripts.length} 条` : `找到 ${filtered.length} 条`} onBack={() => onNavigate('/me')}>
+      <div className="mb-6">
+        <SearchBox value={query} onChange={setQuery} placeholder="搜索话术内容、场景或阶段" ariaLabel="搜索话术" inputId="script-search-input" />
+      </div>
+      {filtered.length === 0 ? (
+        <div className="mt-2">
+          <EmptyState title="没有匹配的话术" message={`没有找到符合「${query.trim()}」的话术，换个关键词试试。`} />
+          <button type="button" onClick={() => setQuery('')} className="mx-auto mt-4 block rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">清空搜索</button>
+        </div>
+      ) : (
       <div className="space-y-6">
-        {groupScripts(state.scripts).map((group) => (
+        {groupScripts(filtered).map((group) => (
           <section key={group.stage} aria-labelledby={`stage-${group.stage}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <h2 id={`stage-${group.stage}`} className="text-xl font-black">{group.stage}</h2>
@@ -58,6 +76,12 @@ export default function ScriptLibraryPage({ onNavigate }: { onNavigate: (path: s
           </section>
         )}
       </div>
+      )}
+      {filtered.length > 0 && groupCount > 0 && (
+        <div className="mt-8 flex justify-center">
+          <button type="button" onClick={() => document.getElementById('script-search-input')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">↑ 回到搜索</button>
+        </div>
+      )}
     </AssetPage>
   )
 }
