@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import { analyzeTranscript, isMockEnabled, type AnalyzeInput } from './dify.ts'
 import crud from './routes/crud.ts'
 import battlecard from './routes/battlecard.ts'
@@ -10,6 +11,15 @@ import tasks from './routes/tasks.ts'
 import config from './routes/config.ts'
 
 const app = new Hono()
+
+// Capacitor 的 Android WebView 使用 https://localhost，iOS 使用
+// capacitor://localhost。只放行这两个原生壳来源，网页端仍走同源 Nginx。
+app.use(
+  '/api/*',
+  cors({
+    origin: ['https://localhost', 'capacitor://localhost'],
+  }),
+)
 
 // 连通性探针：T04 / T05 的验收依据，业务接口后续在 src/routes 下追加
 app.get('/api/ping', (c) => c.json({ ok: true, service: 'sales-review-backend' }))
