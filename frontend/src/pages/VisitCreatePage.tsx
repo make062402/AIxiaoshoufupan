@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getCustomers, scheduleVisit } from '../api/client.ts'
 import { ErrorState, LoadingState } from '../components/PageStates.tsx'
+import { defaultVisitTime, quickDateOptions, toDateTimeLocalValue } from '../lib/dateQuick.ts'
 import type { CustomerRecord } from '../types/types.ts'
 
 export default function VisitCreatePage({ onNavigate }: { onNavigate: (path: string) => void }) {
@@ -13,7 +14,7 @@ export default function VisitCreatePage({ onNavigate }: { onNavigate: (path: str
   const [need, setNeed] = useState('')
   const [industry, setIndustry] = useState('装修')
   const [scene, setScene] = useState('')
-  const [scheduledAt, setScheduledAt] = useState('')
+  const [scheduledAt, setScheduledAt] = useState(() => toDateTimeLocalValue(defaultVisitTime()))
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -42,6 +43,9 @@ export default function VisitCreatePage({ onNavigate }: { onNavigate: (path: str
       && Number.isFinite(parsedDate)
       && (mode === 'existing' ? customerId : name.trim() && industry),
   )
+  const preview = Number.isFinite(parsedDate)
+    ? new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(parsedDate))
+    : ''
 
   async function submit() {
     if (!valid) return
@@ -136,14 +140,37 @@ export default function VisitCreatePage({ onNavigate }: { onNavigate: (path: str
             <option>多次拜访</option>
           </select>
         </label>
-        <Field
-          label="拜访时间"
-          value={scheduledAt}
-          set={setScheduledAt}
-          placeholder="例如：2026-09-26 15:00"
-        />
+        <div>
+          <label className="block font-bold" htmlFor="visit-time">拜访时间
+            <input
+              id="visit-time"
+              type="datetime-local"
+              aria-label="拜访时间"
+              value={scheduledAt}
+              onChange={(event) => setScheduledAt(event.target.value)}
+              className="mt-2 w-full rounded-xl border p-3"
+            />
+          </label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {quickDateOptions().map((option) => {
+              const current = new Date(parsedDate)
+              const hour = Number.isFinite(parsedDate) ? current.getHours() : 9
+              const minute = Number.isFinite(parsedDate) ? current.getMinutes() : 0
+              const quickValue = new Date(option.value)
+              quickValue.setHours(hour, minute, 0, 0)
+              return (
+                <button key={option.key} type="button" onClick={() => setScheduledAt(toDateTimeLocalValue(quickValue))} className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
         {scheduledAt && !Number.isFinite(parsedDate) && (
-          <p role="alert" className="text-sm font-bold text-rose-700">请输入有效时间，例如：2026-09-26 15:00</p>
+          <p role="alert" className="text-sm font-bold text-rose-700">请选择有效的拜访时间。</p>
+        )}
+        {preview && (
+          <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">将于 {preview} 拜访，请确认。</p>
         )}
         <button
           disabled={!valid || saving}
