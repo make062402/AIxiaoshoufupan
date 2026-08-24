@@ -6,15 +6,20 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:android:web": "node --env-file-if-exists=.env.android.local scripts/validate-android-api.mjs && tsc -b && vite build --mode android",
+    "build:android:web": "NATIVE_PLATFORM=Android node --env-file-if-exists=.env.android.local scripts/validate-native-api.mjs && tsc -b && vite build --mode android",
     "android:sync": "npx cap sync android",
     "android:apk": "npm run build:android:web && npm run android:sync && cd android && ./gradlew assembleDebug",
+    "build:ios:web": "NATIVE_PLATFORM=iOS node --env-file-if-exists=.env.ios.local scripts/validate-native-api.mjs && tsc -b && vite build --mode ios",
+    "ios:sync": "npx cap sync ios",
+    "ios:build": "npm run build:ios:web && npm run ios:sync && xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/App/DerivedData CODE_SIGNING_ALLOWED=NO build",
+    "ios:open": "npm run build:ios:web && npm run ios:sync && npx cap open ios",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
     "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

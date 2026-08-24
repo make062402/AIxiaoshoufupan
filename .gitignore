@@ -24,7 +24,7 @@ frontend/android/app/build/
 frontend/android/local.properties
 frontend/ios/App/Pods/
 frontend/ios/App/App/public/
-frontend/ios/App/DerivedData/
+frontend/ios/App/DerivedData*/
 *.apk
 *.aab
 *.jks

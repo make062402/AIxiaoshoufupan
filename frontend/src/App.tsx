@@ -61,7 +61,7 @@ export default function App() {
       </aside>
 
       <div className="min-h-screen md:pl-64">
-        <header className="border-b border-slate-200 bg-white/90 px-5 py-4 backdrop-blur md:px-10 md:py-6">
+        <header className="border-b border-slate-200 bg-white/90 px-5 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] backdrop-blur md:px-10 md:py-6">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div className="md:hidden"><Brand onNavigate={() => navigate('/todos')} compact /></div>
             <div className="hidden md:block">
