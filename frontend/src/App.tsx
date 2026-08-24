@@ -69,7 +69,6 @@ export default function App() {
               <p className="text-sm font-medium text-slate-500">工作台</p>
               <p className="mt-1 text-lg font-semibold">{pageLabel ?? '页面未找到'}</p>
             </div>
-            <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">Mock 模式</span>
           </div>
         </header>
 
