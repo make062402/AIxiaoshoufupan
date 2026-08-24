@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getCustomers, scheduleVisit } from '../api/client.ts'
 import { ErrorState, LoadingState } from '../components/PageStates.tsx'
+import ConfirmDialog from '../components/ConfirmDialog.tsx'
 import { defaultVisitTime, quickDateOptions, toDateTimeLocalValue } from '../lib/dateQuick.ts'
 import type { CustomerRecord } from '../types/types.ts'
 
@@ -17,6 +18,7 @@ export default function VisitCreatePage({ onNavigate }: { onNavigate: (path: str
   const [scheduledAt, setScheduledAt] = useState(() => toDateTimeLocalValue(defaultVisitTime()))
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [confirming, setConfirming] = useState(false)
 
   const load = () => {
     setFailed(false)
@@ -46,9 +48,12 @@ export default function VisitCreatePage({ onNavigate }: { onNavigate: (path: str
   const preview = Number.isFinite(parsedDate)
     ? new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(parsedDate))
     : ''
+  const selectedCustomer = mode === 'existing' ? customers.find((customer) => String(customer.id) === customerId) : undefined
+  const summaryCustomer = mode === 'existing' ? (selectedCustomer?.name ?? '未选择客户') : (name.trim() || '新客户（未命名）')
 
   async function submit() {
     if (!valid) return
+    setConfirming(false)
     setSaving(true)
     setMessage('')
     try {
@@ -174,7 +179,7 @@ export default function VisitCreatePage({ onNavigate }: { onNavigate: (path: str
         )}
         <button
           disabled={!valid || saving}
-          onClick={() => void submit()}
+          onClick={() => setConfirming(true)}
           className="w-full rounded-xl bg-emerald-700 p-4 font-black text-white disabled:opacity-40"
         >
           {saving ? '创建中…' : '创建并绑定'}
@@ -183,6 +188,14 @@ export default function VisitCreatePage({ onNavigate }: { onNavigate: (path: str
           <p role="status" className="rounded-xl bg-slate-100 p-3 text-sm font-bold">{message}</p>
         )}
       </div>
+      <ConfirmDialog
+        open={confirming}
+        title="确认创建拜访"
+        description={`将为「${summaryCustomer}」创建一次「${scene}」，时间：${preview}。创建后拜访会写入数据库；如需取消，请到数据库侧处理，页面不提供撤销。`}
+        confirmLabel="确认创建"
+        onConfirm={() => void submit()}
+        onCancel={() => setConfirming(false)}
+      />
     </section>
   )
 }

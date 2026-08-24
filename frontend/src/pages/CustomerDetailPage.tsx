@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { getCustomer, getReviews, overrideCustomerIntent, saveCustomer } from '../api/client.ts'
 import { ErrorState, LoadingState } from '../components/PageStates.tsx'
+import UndoBanner from '../components/UndoBanner.tsx'
 import { deriveCustomerStage } from '../lib/customerList.ts'
 import {
   customerToProfileForm,
@@ -27,6 +28,8 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
   const [operator, setOperator] = useState('当前销售')
   const [intentSaving, setIntentSaving] = useState(false)
   const [intentMessage, setIntentMessage] = useState('')
+  const [saveUndo, setSaveUndo] = useState<CustomerRecord | null>(null)
+  const [intentUndo, setIntentUndo] = useState<{ level: IntentLevel; score: number } | null>(null)
 
   const load = useCallback(() => {
     let active = true
@@ -59,15 +62,18 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
   async function submit(event: FormEvent) {
     event.preventDefault()
     if (state.status !== 'ready' || Object.keys(errors).length > 0) return
+    const snapshot = state.customer
     setSaving(true)
     setSaveError('')
     setSaved(false)
+    setSaveUndo(null)
     try {
       const updated = await saveCustomer(mergeProfileIntoCustomer(state.customer, state.form))
       setState((current) => current.status === 'ready'
         ? { ...current, customer: updated, form: customerToProfileForm(updated) }
         : current)
       setSaved(true)
+      setSaveUndo(snapshot)
     } catch {
       setSaveError('保存失败，请检查后端服务后再试。')
     } finally {
@@ -75,16 +81,57 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
     }
   }
 
+  async function undoProfileSave() {
+    if (!saveUndo) return
+    const snapshot = saveUndo
+    setSaveUndo(null)
+    setSaving(true)
+    setSaveError('')
+    try {
+      const restored = await saveCustomer(snapshot)
+      setState((current) => current.status === 'ready'
+        ? { ...current, customer: restored, form: customerToProfileForm(restored) }
+        : current)
+      setSaved(true)
+    } catch {
+      setSaveError('撤销失败，请重试。')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function saveIntentOverride() {
     if (state.status !== 'ready' || !operator.trim()) return
+    const before = { level: state.customer.intentLevel ?? 'C', score: state.customer.intentScore ?? 0 }
     setIntentSaving(true)
     setIntentMessage('')
+    setIntentUndo(null)
     try {
       const result = await overrideCustomerIntent(state.customer.id, intentLevel, intentLevel === 'B' ? intentScore : 0, operator.trim())
       setState((current) => current.status === 'ready' ? { ...current, customer: result.customer } : current)
       setIntentMessage(`已由${result.log.operator}把意向从 ${result.log.fromLevel} 调整为 ${result.log.toLevel}，并完成留痕。`)
+      setIntentUndo(before)
     } catch {
       setIntentMessage('意向调整失败，客户级别和留痕均未改变。')
+    } finally {
+      setIntentSaving(false)
+    }
+  }
+
+  async function undoIntentOverride() {
+    if (!intentUndo || state.status !== 'ready') return
+    const before = intentUndo
+    setIntentUndo(null)
+    setIntentSaving(true)
+    setIntentMessage('')
+    try {
+      const result = await overrideCustomerIntent(state.customer.id, before.level, before.score, `${operator.trim()}（撤销）`)
+      setState((current) => current.status === 'ready' ? { ...current, customer: result.customer } : current)
+      setIntentLevel(before.level)
+      setIntentScore(before.score)
+      setIntentMessage(`已撤销，意向恢复为 ${result.log.toLevel}，并新增一条反向留痕。`)
+    } catch {
+      setIntentMessage('撤销失败，意向与留痕均保持当前状态。')
     } finally {
       setIntentSaving(false)
     }
@@ -144,7 +191,8 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
         <ProfileGroup id="profile-8" number={8} label="采购时间点 / 交付期限" pending={!statuses[7].filled}><Field label="客户原话时间点" value={state.form.deadline} onChange={(value) => updateField('deadline', value)} /></ProfileGroup>
 
         {saveError && <p role="alert" className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">{saveError}</p>}
-        {saved && <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">已保存，刷新页面仍可看到最新档案。</p>}
+        {saveUndo && <UndoBanner message="客户档案已保存，可恢复到保存前的内容。" onUndo={() => void undoProfileSave()} onDismiss={() => setSaveUndo(null)} />}
+        {saved && !saveUndo && <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">已保存，刷新页面仍可看到最新档案。</p>}
         <button type="submit" disabled={saving || Object.keys(errors).length > 0} className="w-full rounded-xl bg-emerald-700 px-5 py-3.5 text-sm font-black text-white hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600 disabled:cursor-not-allowed disabled:opacity-50">
           {saving ? '保存中…' : '保存客户档案'}
         </button>
@@ -171,6 +219,7 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
           </label>
           <Field label="操作人" value={operator} onChange={(value) => { setOperator(value); setIntentMessage('') }} required />
         </div>
+        {intentUndo && <div className="mt-4"><UndoBanner message="意向已人工调整，可撤销恢复原级别。" onUndo={() => void undoIntentOverride()} onDismiss={() => setIntentUndo(null)} /></div>}
         {intentMessage && <p role="status" className={`mt-4 rounded-xl px-4 py-3 text-sm font-semibold ${intentMessage.includes('失败') ? 'bg-rose-50 text-rose-800' : 'bg-emerald-50 text-emerald-800'}`}>{intentMessage}</p>}
         <button type="button" onClick={saveIntentOverride} disabled={intentSaving || !operator.trim()} className="mt-5 rounded-xl bg-slate-900 px-5 py-3 text-sm font-black text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">
           {intentSaving ? '保存意向中…' : '确认人工调整'}

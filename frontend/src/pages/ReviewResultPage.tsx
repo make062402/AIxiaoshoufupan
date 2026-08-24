@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { analyzeTranscript, createScript, getProducts, getReviewReport, getReviews, submitReview } from '../api/client.ts'
 import { ErrorState, LoadingState } from '../components/PageStates.tsx'
+import ConfirmDialog from '../components/ConfirmDialog.tsx'
 import { PROFILE_FIELDS } from '../config/scoring.ts'
 import { buildReviewAnalysis, METRIC_SOURCES, type ReviewAnalysis } from '../lib/reviewAnalysis.ts'
 import { loadCompletedDraft, loadReviewContext } from '../lib/reviewDraft.ts'
@@ -47,6 +48,7 @@ export default function ReviewResultPage({ reviewId, onNavigate }: { reviewId?: 
   const savedHighlightsRef = useRef(new Set<number>())
   const [savingReview, setSavingReview] = useState(false)
   const [reviewSaveError, setReviewSaveError] = useState('')
+  const [confirmingSave, setConfirmingSave] = useState(false)
   const savingReviewRef = useRef(false)
 
   const load = useCallback(() => {
@@ -143,6 +145,7 @@ export default function ReviewResultPage({ reviewId, onNavigate }: { reviewId?: 
 
   const saveReview = async () => {
     if (savingReviewRef.current || state.reviewId) return
+    setConfirmingSave(false)
     savingReviewRef.current = true
     setSavingReview(true)
     setReviewSaveError('')
@@ -174,7 +177,7 @@ export default function ReviewResultPage({ reviewId, onNavigate }: { reviewId?: 
       </div>
       <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{dimensions.map((dimension) => <article key={dimension.key} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-bold text-slate-500">{dimension.label}</p><p className="mt-3 text-4xl font-black text-emerald-700">{state.analysis.scores[dimension.key]}<span className="text-lg text-slate-400">/1</span></p></article>)}</div>
       {reviewSaveError && <p role="alert" className="mt-5 rounded-xl bg-rose-50 p-4 text-sm font-semibold text-rose-800">{reviewSaveError}</p>}
-      {state.reviewId ? <div role="status" className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><p className="font-black text-emerald-900">报告 #{state.reviewId} 已保存 · {state.customerName} · {state.stage}</p><p className="mt-2 text-sm text-emerald-800">数据库已恢复 {state.needCount} 条需求和 {state.todoCount} 条待办；刷新当前 URL 仍可查看完整报告。</p></div> : <button type="button" disabled={savingReview} onClick={() => void saveReview()} className="mt-5 w-full rounded-2xl bg-emerald-700 px-6 py-4 text-base font-black text-white disabled:cursor-not-allowed disabled:bg-emerald-300">{savingReview ? '正在原子保存…' : '保存复盘报告'}</button>}
+      {state.reviewId ? <div role="status" className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><p className="font-black text-emerald-900">报告 #{state.reviewId} 已保存 · {state.customerName} · {state.stage}</p><p className="mt-2 text-sm text-emerald-800">数据库已恢复 {state.needCount} 条需求和 {state.todoCount} 条待办；刷新当前 URL 仍可查看完整报告。</p></div> : <button type="button" disabled={savingReview} onClick={() => setConfirmingSave(true)} className="mt-5 w-full rounded-2xl bg-emerald-700 px-6 py-4 text-base font-black text-white disabled:cursor-not-allowed disabled:bg-emerald-300">{savingReview ? '正在原子保存…' : '保存复盘报告'}</button>}
       <nav aria-label="页内目录" className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-black text-slate-700">快速跳转</h2>
@@ -245,6 +248,14 @@ export default function ReviewResultPage({ reviewId, onNavigate }: { reviewId?: 
           </div>
         </div>
       </section>
+      <ConfirmDialog
+        open={confirmingSave}
+        title="确认保存复盘报告"
+        description={`将把本次复盘连同 ${state.aiResult.needs.length} 条需求、${state.aiResult.next_actions.length} 条待办原子写入数据库。保存后页面会跳转到稳定报告地址，保存过程不可撤销；如需改动，请重新提交复盘。`}
+        confirmLabel="确认保存"
+        onConfirm={() => void saveReview()}
+        onCancel={() => setConfirmingSave(false)}
+      />
     </section>
   )
 }

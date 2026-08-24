@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getCustomers, getTodos, updateTodo } from '../api/client.ts'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageStates.tsx'
+import UndoBanner from '../components/UndoBanner.tsx'
 import { groupTodos } from '../lib/todoSchedule.ts'
 import { quickDateOptions, toDateKey } from '../lib/dateQuick.ts'
 import type { CustomerRecord, TodoRecord } from '../types/types.ts'
@@ -8,13 +9,33 @@ import type { CustomerRecord, TodoRecord } from '../types/types.ts'
 type State = { status: 'loading' } | { status: 'error' } | { status: 'ready'; todos: TodoRecord[]; customers: CustomerRecord[] }
 
 export default function TodoPage({ onNavigate }: { onNavigate: (path: string) => void }) {
-  const [key, setKey] = useState(0); const [state, setState] = useState<State>({ status: 'loading' }); const [saving, setSaving] = useState<number | null>(null); const [message, setMessage] = useState('')
+  const [key, setKey] = useState(0); const [state, setState] = useState<State>({ status: 'loading' }); const [saving, setSaving] = useState<number | null>(null); const [message, setMessage] = useState(''); const [undo, setUndo] = useState<{ id: number; done: boolean; dueDate: string | null } | null>(null)
   useEffect(() => { let active = true; Promise.all([getTodos(), getCustomers()]).then(([todos, customers]) => { if (active) setState({ status: 'ready', todos, customers }) }).catch(() => { if (active) setState({ status: 'error' }) }); return () => { active = false } }, [key])
   if (state.status === 'loading') return <LoadingState message="正在加载待办…" />
   if (state.status === 'error') return <ErrorState title="待办加载失败" message="请检查后端服务后重试。" onRetry={() => { setState({ status: 'loading' }); setKey((v) => v + 1) }} />
   const names = new Map(state.customers.map((customer) => [customer.id, customer.name]))
-  async function save(id: number, values: { done?: boolean; dueDate?: string | null }) { setSaving(id); setMessage(''); try { const updated = await updateTodo(id, values); setState((current) => current.status === 'ready' ? { ...current, todos: current.todos.map((todo) => todo.id === id ? updated : todo) } : current); setMessage('待办已保存，刷新后仍会保留。') } catch { setMessage('保存失败，请重试。') } finally { setSaving(null) } }
-  return <section aria-labelledby="page-title"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-bold text-emerald-700">行动清单</p><h1 id="page-title" className="mt-2 text-3xl font-black">待办</h1><details className="mt-3 text-sm text-slate-500"><summary className="inline-flex cursor-pointer items-center gap-1 font-semibold text-slate-500 hover:text-slate-700">说明</summary><p className="mt-2 leading-6">有截止日的待办按时间分组；没有明确日期的待办如实显示“未设截止日”，不会被自动改成今天。</p></details></div><button onClick={() => onNavigate('/new')} className="rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white">创建拜访日程</button></div>{message && <p role="status" className="mt-4 rounded-xl bg-slate-100 p-3 text-sm font-bold">{message}</p>}{state.todos.length === 0 ? <div className="mt-6"><EmptyState title="还没有待办" message="复盘动作会出现在这里。" /></div> : <div className="mt-6 space-y-8">{groupTodos(state.todos).map((group) => <section key={group.key} aria-label={group.label}><div className="mb-3 flex items-center gap-3"><h2 className="text-sm font-black tracking-wide text-slate-700">{group.label}</h2><span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500">{group.items.length}</span></div><ul className="space-y-4">{group.items.map((todo) => <li key={todo.id} className={`rounded-2xl border bg-white p-5 shadow-sm ${todo.done ? 'border-slate-200 opacity-65' : 'border-emerald-200'}`}><div className="flex items-start gap-3"><input aria-label={`完成待办：${todo.text}`} type="checkbox" checked={todo.done} disabled={saving === todo.id} onChange={(event) => void save(todo.id, { done: event.target.checked })} className="mt-1 h-5 w-5" /><div className="min-w-0 flex-1"><p className={`font-black ${todo.done ? 'line-through' : ''}`}>{todo.text}</p><p className="mt-2 text-sm text-slate-500">客户：{names.get(todo.customerId) ?? '客户不存在'} · {todo.dueDate ?? '未设截止日'}</p><DueDateForm todo={todo} saving={saving === todo.id} onSave={save} /></div></div></li>)}</ul></section>)}</div>}</section>
+  async function save(id: number, values: { done?: boolean; dueDate?: string | null }) {
+    if (state.status !== 'ready') return
+    const before = state.todos.find((todo) => todo.id === id)
+    if (!before) return
+    setSaving(id); setMessage(''); setUndo(null)
+    try {
+      const updated = await updateTodo(id, values)
+      setState((current) => current.status === 'ready' ? { ...current, todos: current.todos.map((todo) => todo.id === id ? updated : todo) } : current)
+      setUndo({ id, done: before.done, dueDate: before.dueDate })
+    } catch { setMessage('保存失败，请重试。') } finally { setSaving(null) }
+  }
+  async function undoLast() {
+    if (!undo) return
+    const previous = undo
+    setUndo(null); setSaving(previous.id); setMessage('')
+    try {
+      const updated = await updateTodo(previous.id, { done: previous.done, dueDate: previous.dueDate })
+      setState((current) => current.status === 'ready' ? { ...current, todos: current.todos.map((todo) => todo.id === previous.id ? updated : todo) } : current)
+      setMessage('已撤销，恢复为之前的待办状态。')
+    } catch { setMessage('撤销失败，请重试。') } finally { setSaving(null) }
+  }
+  return <section aria-labelledby="page-title"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-bold text-emerald-700">行动清单</p><h1 id="page-title" className="mt-2 text-3xl font-black">待办</h1><details className="mt-3 text-sm text-slate-500"><summary className="inline-flex cursor-pointer items-center gap-1 font-semibold text-slate-500 hover:text-slate-700">说明</summary><p className="mt-2 leading-6">有截止日的待办按时间分组；没有明确日期的待办如实显示“未设截止日”，不会被自动改成今天。</p></details></div><button onClick={() => onNavigate('/new')} className="rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white">创建拜访日程</button></div>{message && <p role={message.includes('失败') ? 'alert' : 'status'} className="mt-4 rounded-xl bg-slate-100 p-3 text-sm font-bold">{message}</p>}{undo && <UndoBanner message="待办已更新，刷新后仍会保留。" onUndo={() => void undoLast()} onDismiss={() => setUndo(null)} />}{state.todos.length === 0 ? <div className="mt-6"><EmptyState title="还没有待办" message="复盘动作会出现在这里。" /></div> : <div className="mt-6 space-y-8">{groupTodos(state.todos).map((group) => <section key={group.key} aria-label={group.label}><div className="mb-3 flex items-center gap-3"><h2 className="text-sm font-black tracking-wide text-slate-700">{group.label}</h2><span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500">{group.items.length}</span></div><ul className="space-y-4">{group.items.map((todo) => <li key={todo.id} className={`rounded-2xl border bg-white p-5 shadow-sm ${todo.done ? 'border-slate-200 opacity-65' : 'border-emerald-200'}`}><div className="flex items-start gap-3"><input aria-label={`完成待办：${todo.text}`} type="checkbox" checked={todo.done} disabled={saving === todo.id} onChange={(event) => void save(todo.id, { done: event.target.checked })} className="mt-1 h-5 w-5" /><div className="min-w-0 flex-1"><p className={`font-black ${todo.done ? 'line-through' : ''}`}>{todo.text}</p><p className="mt-2 text-sm text-slate-500">客户：{names.get(todo.customerId) ?? '客户不存在'} · {todo.dueDate ?? '未设截止日'}</p><DueDateForm todo={todo} saving={saving === todo.id} onSave={save} /></div></div></li>)}</ul></section>)}</div>}</section>
 }
 
 function DueDateForm({ todo, saving, onSave }: { todo: TodoRecord; saving: boolean; onSave: (id: number, values: { done?: boolean; dueDate?: string | null }) => void }) {
