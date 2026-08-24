@@ -88,7 +88,7 @@ try {
   pass('保存后重新 GET 仍能看到修改')
 
   assert.deepEqual(resolveRoute(`/me/customers/${customer.id}`), {
-    kind: 'page', route: 'me', path: `/me/customers/${customer.id}`,
+    kind: 'page', route: 'customers', path: `/me/customers/${customer.id}`,
   })
   pass('客户详情使用带 ID 的稳定 URL')
 

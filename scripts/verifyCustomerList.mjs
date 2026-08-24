@@ -52,7 +52,7 @@ assert.deepEqual(stages, {
 })
 pass('S1/S2/S3 完全由 reviews 数量派生')
 
-assert.deepEqual(resolveRoute('/me/customers'), { kind: 'page', route: 'me', path: '/me/customers' })
+assert.deepEqual(resolveRoute('/me/customers'), { kind: 'page', route: 'customers', path: '/me/customers' })
 pass('客户库使用可刷新恢复的稳定 URL')
 
 const sameName = buildCustomerList([

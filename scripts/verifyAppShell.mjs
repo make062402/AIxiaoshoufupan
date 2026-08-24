@@ -9,7 +9,7 @@ const pass = (message) => { passed += 1; console.log(`PASS ${message}`) }
 for (const item of NAV_ITEMS) {
   assert.deepEqual(resolveRoute(item.path), { kind: 'page', route: item.route, path: item.path })
 }
-pass('四个一级入口都映射到独立稳定路径')
+pass('五个一级入口都映射到独立稳定路径')
 
 class FakeBrowser {
   listeners = new Set()

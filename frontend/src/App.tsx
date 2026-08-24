@@ -20,7 +20,8 @@ const routeCopy: Record<AppRoute, { eyebrow: string; description: string }> = {
   todos: { eyebrow: '今天先做重要的事', description: '这里将汇总拜访安排和复盘产生的待办。' },
   new: { eyebrow: '安排下一次客户接触', description: '这里将用于新建拜访日程并绑定客户。' },
   reviews: { eyebrow: '把每次拜访变成进步', description: '这里将用于上传或粘贴逐字稿并完成复盘。' },
-  me: { eyebrow: '沉淀你的销售资产', description: '这里将汇总客户库、话术库、产品库与个人配置。' },
+  customers: { eyebrow: '一眼看清每个客户', description: '这里汇总客户档案、意向与拜访作战包。' },
+  me: { eyebrow: '沉淀你的销售资产', description: '这里将汇总话术库、产品库与个人配置。' },
 }
 
 export default function App() {
@@ -105,7 +106,7 @@ export default function App() {
         </main>
       </div>
 
-      <nav aria-label="主导航" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-slate-200 bg-white/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_28px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
+      <nav aria-label="主导航" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-slate-200 bg-white/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_28px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
         {NAV_ITEMS.map((item) => (
           <NavLink key={item.path} item={item} active={activeItem?.route === item.route} onNavigate={navigate} compact />
         ))}
