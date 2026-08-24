@@ -6,14 +6,20 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:android:web": "node --env-file-if-exists=.env.android.local scripts/validate-android-api.mjs && tsc -b && vite build --mode android",
+    "android:sync": "npx cap sync android",
+    "android:apk": "npm run build:android:web && npm run android:sync && cd android && ./gradlew assembleDebug",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
@@ -22,6 +28,11 @@
     "oxlint": "^1.75.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
-    "vite": "^8.2.0"
+    "vite": "^8.2.0",
+    "vite-plugin-pwa": "^1.3.0"
+  },
+  "overrides": {
+    "sharp": "^0.35.3",
+    "uuid": "^11.1.1"
   }
 }

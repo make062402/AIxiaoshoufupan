@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="AI 销售复盘助手">
+  <rect width="512" height="512" rx="112" fill="#0f766e"/>
+  <path d="M128 142h256a28 28 0 0 1 28 28v172a28 28 0 0 1-28 28H210l-70 50v-50h-12a28 28 0 0 1-28-28V170a28 28 0 0 1 28-28Z" fill="#fff"/>
+  <path d="M167 303V239m59 64v-94m59 94v-53m59 53V190" stroke="#0f766e" stroke-width="28" stroke-linecap="round"/>
+</svg>

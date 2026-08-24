@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.*.example
 
 node_modules/
 dist/
@@ -15,6 +16,16 @@ build/
 .DS_Store
 *.log
 
-# Capacitor（T50）
-android/
-ios/
+# Capacitor（T50）：保留原生工程源码，只忽略本机路径、缓存、安装包和签名材料
+frontend/android/.gradle/
+frontend/android/.idea/
+frontend/android/build/
+frontend/android/app/build/
+frontend/android/local.properties
+frontend/ios/App/Pods/
+frontend/ios/App/App/public/
+frontend/ios/App/DerivedData/
+*.apk
+*.aab
+*.jks
+*.keystore

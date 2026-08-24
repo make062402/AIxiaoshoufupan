@@ -1,8 +1,16 @@
 import type { AiResult, BattlecardAggregate, CustomerRecord, IntentLevel, IntentLogRecord, Metrics, ProductRecord, ReviewReportRecord, ReviewSummaryRecord, Scores, ScriptRecord, SellingPoint, TodoRecord, Transcript, VisitRecord } from '../types/types.ts'
 
+const configuredApiBase = import.meta.env.VITE_API_BASE_URL?.trim()
+
+/**
+ * Web/PWA 默认由同一域名的 /api 提供服务；原生壳构建时必须显式注入 HTTPS 后端。
+ * 这里只存后端公开地址，Dify 等服务密钥仍只保存在服务端。
+ */
+export const API_BASE_URL = (configuredApiBase || '/api').replace(/\/$/, '')
+
 // 前端唯一的后端出口。后续所有请求都从这里走，便于统一加载态与错误处理（T30）。
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     headers: { 'Content-Type': 'application/json' },
     ...init,
   })

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AI 销售复盘助手</string>
+    <string name="title_activity_main">AI 销售复盘助手</string>
+    <string name="package_name">com.aixiaoshou.review</string>
+    <string name="custom_url_scheme">com.aixiaoshou.review</string>
+</resources>
