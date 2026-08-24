@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getProducts } from '../api/client.ts'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageStates.tsx'
 import SearchBox from '../components/SearchBox.tsx'
+import BackToTop from '../components/BackToTop.tsx'
 import type { ProductRecord } from '../types/types.ts'
 
 type State = { status: 'loading' } | { status: 'error' } | { status: 'ready'; products: ProductRecord[] }
@@ -61,6 +62,7 @@ export default function ProductLibraryPage({ onNavigate }: { onNavigate: (path: 
           <button type="button" onClick={() => document.getElementById('product-search-input')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">↑ 回到搜索</button>
         </div>
       )}
+      <BackToTop />
     </section>
   )
 }

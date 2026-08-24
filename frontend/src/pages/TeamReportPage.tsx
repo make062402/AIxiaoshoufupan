@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getCustomers, getReviews } from '../api/client.ts'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageStates.tsx'
 import SearchBox from '../components/SearchBox.tsx'
+import BackToTop from '../components/BackToTop.tsx'
 import { buildDemoTeamReport } from '../lib/demoRole.ts'
 import type { CustomerRecord, ReviewSummaryRecord } from '../types/types.ts'
 
@@ -72,6 +73,7 @@ export default function TeamReportPage({ onNavigate }: { onNavigate: (path: stri
           </ul>
         )}
       </article>
+      <BackToTop />
     </section>
   )
 }

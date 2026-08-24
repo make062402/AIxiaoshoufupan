@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getScripts } from '../api/client.ts'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageStates.tsx'
 import SearchBox from '../components/SearchBox.tsx'
+import BackToTop from '../components/BackToTop.tsx'
 import { groupScripts, invalidScripts, SCRIPT_STAGES } from '../lib/myAssets.ts'
 import type { ScriptRecord } from '../types/types.ts'
 
@@ -60,7 +61,7 @@ export default function ScriptLibraryPage({ onNavigate }: { onNavigate: (path: s
         </div>
       ) : (
       <div className="space-y-6">
-        {groupScripts(filtered).map((group) => (
+        {groupScripts(filtered).filter((group) => stageFilter === '全部' || group.stage === stageFilter).map((group) => (
           <section key={group.stage} aria-labelledby={`stage-${group.stage}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <h2 id={`stage-${group.stage}`} className="text-xl font-black">{group.stage}</h2>
@@ -110,6 +111,7 @@ function AssetPage({ title, eyebrow, count, onBack, children }: { title: string;
         <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">{count}</span>
       </div>
       {children}
+      <BackToTop />
     </section>
   )
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getCustomers, getReviews } from '../api/client.ts'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageStates.tsx'
 import SearchBox from '../components/SearchBox.tsx'
+import BackToTop from '../components/BackToTop.tsx'
 import { buildCustomerList, type CustomerListRow } from '../lib/customerList.ts'
 import type { CustomerStage } from '../lib/customerList.ts'
 import type { IntentLevel } from '../types/types.ts'
@@ -161,6 +162,7 @@ export default function CustomerListPage({ onNavigate }: { onNavigate: (path: st
           </button>
         </div>
       )}
+      <BackToTop />
     </section>
   )
 }
