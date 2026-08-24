@@ -112,9 +112,9 @@ export default function VisitCreatePage({ onNavigate }: { onNavigate: (path: str
           </label>
         ) : (
           <>
-            <Field label="客户称呼" value={name} set={setName} />
-            <Field label="身份" value={identity} set={setIdentity} />
-            <Field label="核心需求" value={need} set={setNeed} />
+            <Field label="客户称呼" value={name} set={setName} placeholder="如：张国庆" />
+            <Field label="身份" value={identity} set={setIdentity} placeholder="如：业主 / 拍板人" />
+            <Field label="核心需求" value={need} set={setNeed} placeholder="如：全屋翻新，担心中途加价" />
             <label className="block font-bold">
               行业
               <select

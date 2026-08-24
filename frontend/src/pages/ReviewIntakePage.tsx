@@ -82,11 +82,12 @@ export default function ReviewIntakePage({ onNavigate }: { onNavigate: (path: st
         <button type="button" role="tab" aria-selected={mode === 'upload'} onClick={() => chooseMode('upload')} className={`rounded-xl px-4 py-3 text-sm font-black ${mode === 'upload' ? 'bg-emerald-700 text-white' : 'bg-white text-slate-600'}`}>上传音频</button>
       </div>
 
-      <label className="mt-5 block rounded-2xl border border-slate-200 bg-white p-5 text-sm font-semibold text-slate-700">谁是销售
+      <label className="mt-5 block rounded-2xl border border-slate-200 bg-white p-5 text-sm font-semibold text-slate-700">逐字稿里的说话人标签
         <select value={salesSpeaker} onChange={(event) => { setSalesSpeaker(event.target.value as Speaker); clearCompletedDraft(sessionStorage) }} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <option value="sales">“销售”标签是销售（推荐）</option>
-          <option value="customer">“客户”标签是销售</option>
+          <option value="sales">“销售”标签代表销售方（推荐）</option>
+          <option value="customer">“客户”标签代表销售方</option>
         </select>
+        <p className="mt-2 text-xs font-normal leading-5 text-slate-500">请选择逐字稿中哪一个说话人标签代表销售。这会决定后续评分时“销售发言”与“客户发言”如何归类。</p>
       </label>
 
       {mode === 'paste' ? (

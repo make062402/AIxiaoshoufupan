@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { getCustomer, getReviews, overrideCustomerIntent, saveCustomer } from '../api/client.ts'
 import { ErrorState, LoadingState } from '../components/PageStates.tsx'
 import UndoBanner from '../components/UndoBanner.tsx'
+import BackToTop from '../components/BackToTop.tsx'
 import { deriveCustomerStage } from '../lib/customerList.ts'
 import {
   customerToProfileForm,
@@ -159,10 +160,7 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
       </div>
 
       <nav aria-label="页内目录" className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-black text-slate-700">快速跳转</h2>
-          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="rounded-lg text-sm font-bold text-emerald-700 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">↑ 回到顶部</button>
-        </div>
+        <h2 className="text-sm font-black text-slate-700">快速跳转</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((number) => (
             <button key={number} type="button" onClick={() => document.getElementById(`profile-${number}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
@@ -178,17 +176,17 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
       <form onSubmit={submit} className="space-y-4" noValidate>
         <ProfileGroup id="profile-1" number={1} label="称呼与身份" pending={!statuses[0].filled}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="客户称呼" value={state.form.name} onChange={(value) => updateField('name', value)} error={errors.name} required />
-            <Field label="身份" value={state.form.identity} onChange={(value) => updateField('identity', value)} />
+            <Field label="客户称呼" value={state.form.name} onChange={(value) => updateField('name', value)} error={errors.name} required placeholder="如：张国庆" />
+            <Field label="身份" value={state.form.identity} onChange={(value) => updateField('identity', value)} placeholder="如：业主 / 拍板人" />
           </div>
         </ProfileGroup>
-        <ProfileGroup id="profile-2" number={2} label="联系方式" pending={!statuses[1].filled}><Field label="电话或微信" value={state.form.phone} onChange={(value) => updateField('phone', value)} /></ProfileGroup>
-        <ProfileGroup id="profile-3" number={3} label="在采购中的角色" pending={!statuses[2].filled}><Field label="使用者 / 影响者 / 拍板人" value={state.form.role} onChange={(value) => updateField('role', value)} /></ProfileGroup>
-        <ProfileGroup id="profile-4" number={4} label="预算区间" pending={!statuses[3].filled}><Field label="客户预算" value={state.form.budget} onChange={(value) => updateField('budget', value)} /></ProfileGroup>
-        <ProfileGroup id="profile-5" number={5} label="核心需求与购买意向" pending={!statuses[4].filled}><Field label="核心需求" value={state.form.coreNeed} onChange={(value) => updateField('coreNeed', value)} multiline /></ProfileGroup>
-        <ProfileGroup id="profile-6" number={6} label="关注维度优先级排序" pending={!statuses[5].filled}><Field label="按顺序填写价格、质量、服务、周期" value={state.form.priorityOrderText} onChange={(value) => updateField('priorityOrderText', value)} error={errors.priorityOrderText} /></ProfileGroup>
-        <ProfileGroup id="profile-7" number={7} label="注意事项" pending={!statuses[6].filled}><Field label="沟通偏好、风险点或忌讳" value={state.form.notes} onChange={(value) => updateField('notes', value)} multiline /></ProfileGroup>
-        <ProfileGroup id="profile-8" number={8} label="采购时间点 / 交付期限" pending={!statuses[7].filled}><Field label="客户原话时间点" value={state.form.deadline} onChange={(value) => updateField('deadline', value)} /></ProfileGroup>
+        <ProfileGroup id="profile-2" number={2} label="联系方式" pending={!statuses[1].filled}><Field label="电话或微信" value={state.form.phone} onChange={(value) => updateField('phone', value)} placeholder="如：13900001111 或微信号" /></ProfileGroup>
+        <ProfileGroup id="profile-3" number={3} label="在采购中的角色" pending={!statuses[2].filled}><Field label="使用者 / 影响者 / 拍板人" value={state.form.role} onChange={(value) => updateField('role', value)} placeholder="如：拍板人" /></ProfileGroup>
+        <ProfileGroup id="profile-4" number={4} label="预算区间" pending={!statuses[3].filled}><Field label="客户预算" value={state.form.budget} onChange={(value) => updateField('budget', value)} placeholder="如：12~15 万" /></ProfileGroup>
+        <ProfileGroup id="profile-5" number={5} label="核心需求与购买意向" pending={!statuses[4].filled}><Field label="核心需求" value={state.form.coreNeed} onChange={(value) => updateField('coreNeed', value)} multiline placeholder="如：全屋翻新，担心中途加价" /></ProfileGroup>
+        <ProfileGroup id="profile-6" number={6} label="关注维度优先级排序" pending={!statuses[5].filled}><Field label="按顺序填写价格、质量、服务、周期" value={state.form.priorityOrderText} onChange={(value) => updateField('priorityOrderText', value)} error={errors.priorityOrderText} placeholder="如：质量、价格、周期" /></ProfileGroup>
+        <ProfileGroup id="profile-7" number={7} label="注意事项" pending={!statuses[6].filled}><Field label="沟通偏好、风险点或忌讳" value={state.form.notes} onChange={(value) => updateField('notes', value)} multiline placeholder="如：忌讳含糊其辞和临时增项" /></ProfileGroup>
+        <ProfileGroup id="profile-8" number={8} label="采购时间点 / 交付期限" pending={!statuses[7].filled}><Field label="客户原话时间点" value={state.form.deadline} onChange={(value) => updateField('deadline', value)} placeholder="如：春节前 / 月底前（可用自然语言）" /></ProfileGroup>
 
         {saveError && <p role="alert" className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">{saveError}</p>}
         {saveUndo && <UndoBanner message="客户档案已保存，可恢复到保存前的内容。" onUndo={() => void undoProfileSave()} onDismiss={() => setSaveUndo(null)} />}
@@ -217,7 +215,7 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
               {intentLevel === 'B' ? <><option value={1}>1 功能细节</option><option value={2}>2 价格</option><option value={3}>3 决策推进</option></> : <option value={0}>0</option>}
             </select>
           </label>
-          <Field label="操作人" value={operator} onChange={(value) => { setOperator(value); setIntentMessage('') }} required />
+          <Field label="操作人" value={operator} onChange={(value) => { setOperator(value); setIntentMessage('') }} required placeholder="如：张三" />
         </div>
         {intentUndo && <div className="mt-4"><UndoBanner message="意向已人工调整，可撤销恢复原级别。" onUndo={() => void undoIntentOverride()} onDismiss={() => setIntentUndo(null)} /></div>}
         {intentMessage && <p role="status" className={`mt-4 rounded-xl px-4 py-3 text-sm font-semibold ${intentMessage.includes('失败') ? 'bg-rose-50 text-rose-800' : 'bg-emerald-50 text-emerald-800'}`}>{intentMessage}</p>}
@@ -225,6 +223,7 @@ export default function CustomerDetailPage({ customerId, onNavigate }: { custome
           {intentSaving ? '保存意向中…' : '确认人工调整'}
         </button>
       </section>
+      <BackToTop />
     </section>
   )
 }
@@ -253,15 +252,15 @@ function ProfileGroup({ id, number, label, pending, children }: { id: string; nu
   )
 }
 
-function Field({ label, value, onChange, error, required = false, multiline = false }: { label: string; value: string; onChange: (value: string) => void; error?: string; required?: boolean; multiline?: boolean }) {
-  const fieldClass = `w-full rounded-xl border bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-amber-700/70 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 ${error ? 'border-rose-400' : 'border-slate-200'}`
+function Field({ label, value, onChange, error, required = false, multiline = false, placeholder = '待确认' }: { label: string; value: string; onChange: (value: string) => void; error?: string; required?: boolean; multiline?: boolean; placeholder?: string }) {
+  const fieldClass = `w-full rounded-xl border bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 ${error ? 'border-rose-400' : 'border-slate-200'}`
   return (
     <label className="block text-sm font-semibold text-slate-700">
       {label}{required && <span className="ml-1 text-rose-600">*</span>}
       {multiline ? (
-        <textarea value={value} onChange={(event) => onChange(event.target.value)} placeholder="待确认" rows={3} className={`${fieldClass} mt-2 resize-y`} aria-invalid={Boolean(error)} />
+        <textarea value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} rows={3} className={`${fieldClass} mt-2 resize-y`} aria-invalid={Boolean(error)} />
       ) : (
-        <input value={value} onChange={(event) => onChange(event.target.value)} placeholder="待确认" className={`${fieldClass} mt-2`} aria-invalid={Boolean(error)} />
+        <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className={`${fieldClass} mt-2`} aria-invalid={Boolean(error)} />
       )}
       {error && <span className="mt-2 block text-xs font-semibold text-rose-700">{error}</span>}
     </label>

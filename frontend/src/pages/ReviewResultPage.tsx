@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { analyzeTranscript, createScript, getProducts, getReviewReport, getReviews, submitReview } from '../api/client.ts'
 import { ErrorState, LoadingState } from '../components/PageStates.tsx'
 import ConfirmDialog from '../components/ConfirmDialog.tsx'
+import BackToTop from '../components/BackToTop.tsx'
 import { PROFILE_FIELDS } from '../config/scoring.ts'
 import { buildReviewAnalysis, METRIC_SOURCES, type ReviewAnalysis } from '../lib/reviewAnalysis.ts'
 import { loadCompletedDraft, loadReviewContext } from '../lib/reviewDraft.ts'
@@ -179,10 +180,7 @@ export default function ReviewResultPage({ reviewId, onNavigate }: { reviewId?: 
       {reviewSaveError && <p role="alert" className="mt-5 rounded-xl bg-rose-50 p-4 text-sm font-semibold text-rose-800">{reviewSaveError}</p>}
       {state.reviewId ? <div role="status" className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><p className="font-black text-emerald-900">报告 #{state.reviewId} 已保存 · {state.customerName} · {state.stage}</p><p className="mt-2 text-sm text-emerald-800">数据库已恢复 {state.needCount} 条需求和 {state.todoCount} 条待办；刷新当前 URL 仍可查看完整报告。</p></div> : <button type="button" disabled={savingReview} onClick={() => setConfirmingSave(true)} className="mt-5 w-full rounded-2xl bg-emerald-700 px-6 py-4 text-base font-black text-white disabled:cursor-not-allowed disabled:bg-emerald-300">{savingReview ? '正在原子保存…' : '保存复盘报告'}</button>}
       <nav aria-label="页内目录" className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-black text-slate-700">快速跳转</h2>
-          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="rounded-lg text-sm font-bold text-emerald-700 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">↑ 回到顶部</button>
-        </div>
+        <h2 className="text-sm font-black text-slate-700">快速跳转</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {[
             { id: 'evidence-section', label: '指标依据与回溯' },
@@ -256,6 +254,7 @@ export default function ReviewResultPage({ reviewId, onNavigate }: { reviewId?: 
         onConfirm={() => void saveReview()}
         onCancel={() => setConfirmingSave(false)}
       />
+      <BackToTop />
     </section>
   )
 }

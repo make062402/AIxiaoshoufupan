@@ -3,7 +3,7 @@ import { getCustomers, getTodos, updateTodo } from '../api/client.ts'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageStates.tsx'
 import UndoBanner from '../components/UndoBanner.tsx'
 import { groupTodos } from '../lib/todoSchedule.ts'
-import { quickDateOptions, toDateKey } from '../lib/dateQuick.ts'
+import { toDateKey } from '../lib/dateQuick.ts'
 import type { CustomerRecord, TodoRecord } from '../types/types.ts'
 
 type State = { status: 'loading' } | { status: 'error' } | { status: 'ready'; todos: TodoRecord[]; customers: CustomerRecord[] }
@@ -35,29 +35,18 @@ export default function TodoPage({ onNavigate }: { onNavigate: (path: string) =>
       setMessage('已撤销，恢复为之前的待办状态。')
     } catch { setMessage('撤销失败，请重试。') } finally { setSaving(null) }
   }
-  return <section aria-labelledby="page-title"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-bold text-emerald-700">行动清单</p><h1 id="page-title" className="mt-2 text-3xl font-black">待办</h1><details className="mt-3 text-sm text-slate-500"><summary className="inline-flex cursor-pointer items-center gap-1 font-semibold text-slate-500 hover:text-slate-700">说明</summary><p className="mt-2 leading-6">有截止日的待办按时间分组；没有明确日期的待办如实显示“未设截止日”，不会被自动改成今天。</p></details></div><button onClick={() => onNavigate('/new')} className="rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white">创建拜访日程</button></div>{message && <p role={message.includes('失败') ? 'alert' : 'status'} className="mt-4 rounded-xl bg-slate-100 p-3 text-sm font-bold">{message}</p>}{undo && <UndoBanner message="待办已更新，刷新后仍会保留。" onUndo={() => void undoLast()} onDismiss={() => setUndo(null)} />}{state.todos.length === 0 ? <div className="mt-6"><EmptyState title="还没有待办" message="复盘动作会出现在这里。" /></div> : <div className="mt-6 space-y-8">{groupTodos(state.todos).map((group) => <section key={group.key} aria-label={group.label}><div className="mb-3 flex items-center gap-3"><h2 className="text-sm font-black tracking-wide text-slate-700">{group.label}</h2><span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500">{group.items.length}</span></div><ul className="space-y-4">{group.items.map((todo) => <li key={todo.id} className={`rounded-2xl border bg-white p-5 shadow-sm ${todo.done ? 'border-slate-200 opacity-65' : 'border-emerald-200'}`}><div className="flex items-start gap-3"><input aria-label={`完成待办：${todo.text}`} type="checkbox" checked={todo.done} disabled={saving === todo.id} onChange={(event) => void save(todo.id, { done: event.target.checked })} className="mt-1 h-5 w-5" /><div className="min-w-0 flex-1"><p className={`font-black ${todo.done ? 'line-through' : ''}`}>{todo.text}</p><p className="mt-2 text-sm text-slate-500">客户：{names.get(todo.customerId) ?? '客户不存在'} · {todo.dueDate ?? '未设截止日'}</p><DueDateForm todo={todo} saving={saving === todo.id} onSave={save} /></div></div></li>)}</ul></section>)}</div>}</section>
+  return <section aria-labelledby="page-title"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-bold text-emerald-700">行动清单</p><h1 id="page-title" className="mt-2 text-3xl font-black">待办</h1><details className="mt-3 text-sm text-slate-500"><summary className="inline-flex cursor-pointer items-center gap-1 font-semibold text-slate-500 hover:text-slate-700">说明</summary><p className="mt-2 leading-6">有截止日的待办按时间分组；没有明确日期的待办如实显示“未设截止日”，不会被自动改成今天。</p></details></div><button onClick={() => onNavigate('/new')} className="rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white">创建拜访日程</button></div>{message && <p role={message.includes('失败') ? 'alert' : 'status'} className="mt-4 rounded-xl bg-slate-100 p-3 text-sm font-bold">{message}</p>}{undo && <UndoBanner message="待办已更新，刷新后仍会保留。" onUndo={() => void undoLast()} onDismiss={() => setUndo(null)} />}{state.todos.length === 0 ? <div className="mt-6"><EmptyState title="还没有待办" message="复盘动作会出现在这里。" /></div> : <div className="mt-6 space-y-8">{groupTodos(state.todos).map((group) => <section key={group.key} aria-label={group.label}><div className="mb-3 flex items-center gap-3"><h2 className="text-sm font-black tracking-wide text-slate-700">{group.label}</h2><span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500">{group.items.length}</span></div><ul className="space-y-4">{group.items.map((todo) => <li key={todo.id} className={`rounded-2xl border bg-white p-5 shadow-sm ${todo.done ? 'border-slate-200 opacity-65' : 'border-emerald-200'}`}><div className="flex items-start gap-3"><input aria-label={`完成待办：${todo.text}`} type="checkbox" checked={todo.done} disabled={saving === todo.id} onChange={(event) => void save(todo.id, { done: event.target.checked })} className="mt-1 h-5 w-5 cursor-pointer rounded border-slate-300 accent-blue-600 transition hover:scale-110 hover:border-blue-400 hover:shadow-[0_0_0_4px_rgba(37,99,235,0.12)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" /><div className="min-w-0 flex-1"><p className={`font-black ${todo.done ? 'line-through' : ''}`}>{todo.text}</p><p className="mt-2 text-sm text-slate-500">客户：{names.get(todo.customerId) ?? '客户不存在'} · {todo.dueDate ?? '未设截止日'}</p><DueDateForm todo={todo} saving={saving === todo.id} onSave={save} /></div></div></li>)}</ul></section>)}</div>}</section>
 }
 
 function DueDateForm({ todo, saving, onSave }: { todo: TodoRecord; saving: boolean; onSave: (id: number, values: { done?: boolean; dueDate?: string | null }) => void }) {
   const [draft, setDraft] = useState(todo.dueDate ?? '')
   const today = toDateKey(new Date())
-  function setQuick(key: 'today' | 'tomorrow' | 'nextWeek') {
-    const option = quickDateOptions().find((item) => item.key === key)
-    if (option) setDraft(toDateKey(option.value))
-  }
   function focusDefault() {
     if (!draft) setDraft(today)
   }
   return (
     <form className="mt-3 flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); void onSave(todo.id, { dueDate: draft ? draft : null }) }}>
       <input name="dueDate" aria-label={`设置截止日：${todo.text}`} type="date" value={draft} onChange={(event) => setDraft(event.target.value)} onFocus={focusDefault} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label={`${todo.text} 的截止日快捷项`}>
-        {quickDateOptions().map((option) => (
-          <button key={option.key} type="button" onClick={() => setQuick(option.key)} className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
-            {option.label}
-          </button>
-        ))}
-      </div>
       <button disabled={saving} className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-bold text-white disabled:opacity-40">{saving ? '保存中…' : '设置截止日'}</button>
       <button type="button" disabled={saving} onClick={() => { setDraft(''); void onSave(todo.id, { dueDate: null }) }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40">
         清除截止日

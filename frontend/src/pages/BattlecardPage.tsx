@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getBattlecard } from '../api/client.ts'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageStates.tsx'
+import BackToTop from '../components/BackToTop.tsx'
 import { buildBattlecard, type BattlecardViewModel } from '../lib/battlecard.ts'
 
 type PageState =
@@ -50,10 +51,7 @@ export default function BattlecardPage({ customerId, onNavigate }: { customerId:
       </header>
 
       <nav aria-label="页内目录" className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-black text-slate-700">快速跳转</h2>
-          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="rounded-lg text-sm font-bold text-emerald-700 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">↑ 回到顶部</button>
-        </div>
+        <h2 className="text-sm font-black text-slate-700">快速跳转</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {[
             { id: 'customer-info-title', label: '01 客户信息' },
@@ -192,6 +190,7 @@ export default function BattlecardPage({ customerId, onNavigate }: { customerId:
           </div>
         )}
       </section>
+      <BackToTop />
     </section>
   )
 }

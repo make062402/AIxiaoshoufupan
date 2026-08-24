@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getScripts } from '../api/client.ts'
 import { EmptyState, ErrorState, LoadingState } from '../components/PageStates.tsx'
 import SearchBox from '../components/SearchBox.tsx'
-import { groupScripts, invalidScripts } from '../lib/myAssets.ts'
+import { groupScripts, invalidScripts, SCRIPT_STAGES } from '../lib/myAssets.ts'
 import type { ScriptRecord } from '../types/types.ts'
 
 type State = { status: 'loading' } | { status: 'error' } | { status: 'ready'; scripts: ScriptRecord[] }
@@ -11,6 +11,7 @@ export default function ScriptLibraryPage({ onNavigate }: { onNavigate: (path: s
   const [requestKey, setRequestKey] = useState(0)
   const [state, setState] = useState<State>({ status: 'loading' })
   const [query, setQuery] = useState('')
+  const [stageFilter, setStageFilter] = useState<string>('全部')
   const load = useCallback(() => {
     let active = true
     getScripts()
@@ -22,9 +23,16 @@ export default function ScriptLibraryPage({ onNavigate }: { onNavigate: (path: s
 
   const keyword = query.trim().toLowerCase()
   const filtered = useMemo(() => {
-    if (state.status !== 'ready' || keyword === '') return state.status === 'ready' ? state.scripts : []
-    return state.scripts.filter((script) => [script.text, script.scene, script.stage].filter((value): value is string => Boolean(value)).join(' ').toLowerCase().includes(keyword))
-  }, [state, keyword])
+    if (state.status !== 'ready') return []
+    let result = state.scripts
+    if (keyword !== '') {
+      result = result.filter((script) => [script.text, script.scene, script.stage].filter((value): value is string => Boolean(value)).join(' ').toLowerCase().includes(keyword))
+    }
+    if (stageFilter !== '全部') {
+      result = result.filter((script) => script.stage === stageFilter)
+    }
+    return result
+  }, [state, keyword, stageFilter])
 
   if (state.status === 'loading') return <LoadingState message="正在加载话术库…" />
   if (state.status === 'error') {
@@ -35,8 +43,15 @@ export default function ScriptLibraryPage({ onNavigate }: { onNavigate: (path: s
   const groupCount = filtered.length
   return (
     <AssetPage title="话术库" eyebrow="个人销售资产" count={keyword === '' ? `共 ${state.scripts.length} 条` : `找到 ${filtered.length} 条`} onBack={() => onNavigate('/me')}>
-      <div className="mb-6">
+      <div className="mb-6 space-y-3">
         <SearchBox value={query} onChange={setQuery} placeholder="搜索话术内容、场景或阶段" ariaLabel="搜索话术" inputId="script-search-input" />
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label="按环节筛选">
+          {['全部', ...SCRIPT_STAGES].map((stage) => (
+            <button key={stage} type="button" role="tab" aria-selected={stageFilter === stage} onClick={() => setStageFilter(stage)} className={`rounded-full px-3 py-1.5 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 ${stageFilter === stage ? 'bg-emerald-700 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}>
+              {stage}
+            </button>
+          ))}
+        </div>
       </div>
       {filtered.length === 0 ? (
         <div className="mt-2">
