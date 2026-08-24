@@ -40,7 +40,7 @@ export default function CustomerListPage({ onNavigate }: { onNavigate: (path: st
         <div>
           <p className="text-sm font-bold tracking-[0.16em] text-emerald-700">客户资产</p>
           <h1 id="page-title" className="mt-2 text-3xl font-black tracking-tight md:text-4xl">客户库</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-500">按姓名拼音排序，跟进阶段根据复盘次数实时计算。</p>
+          <details className="mt-3 text-sm text-slate-500"><summary className="inline-flex cursor-pointer items-center gap-1 font-semibold text-slate-500 hover:text-slate-700">说明</summary><p className="mt-2 leading-6">按姓名拼音排序，跟进阶段根据复盘次数实时计算。</p></details>
         </div>
         {state.status === 'ready' && <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">共 {state.rows.length} 位客户</span>}
       </div>

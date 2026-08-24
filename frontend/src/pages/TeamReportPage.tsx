@@ -27,7 +27,7 @@ export default function TeamReportPage({ onNavigate }: { onNavigate: (path: stri
   const report = buildDemoTeamReport(state.customers, state.reviews)
   return (
     <section aria-labelledby="page-title">
-      <button onClick={() => onNavigate('/me')} className="text-sm font-bold text-emerald-700">← 返回我的</button>
+      <button onClick={() => onNavigate('/me')} className="text-sm font-bold text-emerald-700 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">← 返回我的</button>
       <div className="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-5">
         <p className="text-xs font-black tracking-[0.16em] text-sky-800">DEMO 单账号口径 · 只读</p>
         <p className="mt-2 text-sm leading-6 text-sky-950">当前数据模型没有销售人员字段。本页把全部复盘归入唯一“演示销售账号”用于演示，不代表真实组织关系，也不提供权限管理。</p>

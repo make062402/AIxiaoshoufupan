@@ -44,7 +44,7 @@ export default function ConfigPage({ onNavigate }: { onNavigate: (path: string) 
 
   return (
     <section aria-labelledby="page-title" className="mx-auto max-w-3xl">
-      <button onClick={() => onNavigate('/me')} className="text-sm font-bold text-emerald-700">← 返回我的</button>
+      <button onClick={() => onNavigate('/me')} className="text-sm font-bold text-emerald-700 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">← 返回我的</button>
       <p className="mt-6 text-sm font-bold tracking-[0.16em] text-emerald-700">后端安全配置</p>
       <h1 id="page-title" className="mt-2 text-3xl font-black md:text-4xl">配置</h1>
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

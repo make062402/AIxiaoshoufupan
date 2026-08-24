@@ -24,7 +24,7 @@ export default function ProductLibraryPage({ onNavigate }: { onNavigate: (path: 
 
   return (
     <section aria-labelledby="page-title">
-      <button onClick={() => onNavigate('/me')} className="text-sm font-bold text-emerald-700">← 返回我的</button>
+      <button onClick={() => onNavigate('/me')} className="text-sm font-bold text-emerald-700 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">← 返回我的</button>
       <div className="mb-7 mt-5 flex flex-wrap items-end justify-between gap-4">
         <div><p className="text-sm font-bold tracking-[0.16em] text-emerald-700">产品资产</p><h1 id="page-title" className="mt-2 text-3xl font-black md:text-4xl">产品库</h1></div>
         <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">共 {state.products.length} 个</span>

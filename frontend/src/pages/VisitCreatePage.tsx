@@ -65,7 +65,7 @@ export default function VisitCreatePage({ onNavigate }: { onNavigate: (path: str
 
   return (
     <section aria-labelledby="page-title" className="mx-auto max-w-3xl">
-      <button onClick={() => onNavigate('/todos')} className="text-sm font-bold text-emerald-700">
+      <button onClick={() => onNavigate('/todos')} className="text-sm font-bold text-emerald-700 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600">
         ← 返回待办
       </button>
       <p className="mt-6 text-sm font-bold text-emerald-700">拜访安排</p>
